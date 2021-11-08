@@ -14,8 +14,8 @@ class RFDevice {
 
     public:
         RFDevice(RFSensorType type, uint32_t id, HomieNode *homie);
-        virtual void update(RFSensorPayload payload){};
-        virtual void cmd(RFSensorPayload payload){};
+        virtual void update(RFSensorPayload& payload){};
+        virtual void cmd(RFSensorPayload& payload){};
 
 };
 
@@ -25,7 +25,7 @@ class RFSensorTemp : public RFDevice {
 
     public:
         RFSensorTemp(uint32_t id, HomieNode *homie);
-        void update(RFSensorPayload payload) override;
+        void update(RFSensorPayload& payload) override;
 };
 
 class RFSensorContact : public RFDevice {
@@ -33,5 +33,5 @@ class RFSensorContact : public RFDevice {
         bool open = false;
     public:
         RFSensorContact(uint32_t id, HomieNode *homie);
-        void update(RFSensorPayload payload) override;
+        void update(RFSensorPayload& payload) override;
 };

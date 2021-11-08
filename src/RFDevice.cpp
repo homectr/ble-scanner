@@ -25,7 +25,7 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
         break;
     }
     bufPos = strlen(buf);
-    snprintf(buf,bufSize-bufPos-1,"%08X",id);
+    snprintf(buf+bufPos,bufSize-bufPos-1,"%08X",id);
     this->idStr = strdup(buf);
     this->homie = homie;
 }
@@ -35,12 +35,12 @@ RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(TEMPERATURE, 
     homie->advertise("temp").setDatatype("Number:Temperature");
 }
 
-void RFSensorTemp:: update(RFSensorPayload payload){
+void RFSensorTemp:: update(RFSensorPayload& payload){
     memcpy((void*)&temp,(void*)&payload,4);
     
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(temp));
-    Homie.getLogger() << millis() << " Sensor-Temp " << idStr << "=" << temp << endl;
+    Homie.getLogger() << millis() << " Sensor-Temp " << idStr << " temp=" << temp << endl;
 }
 
 RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(CONTACT, id, homie){
@@ -48,10 +48,10 @@ RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(CONTACT
     homie->advertise(idStr).setDatatype("Contact");
 }
 
-void RFSensorContact::update(RFSensorPayload payload){
+void RFSensorContact::update(RFSensorPayload& payload){
     open = payload[0];
 
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(open?"OPEN":"CLOSED");
-    Homie.getLogger() << millis() << " Sensor-Contact " << idStr << "=" << open << endl;
+    Homie.getLogger() << millis() << " Sensor-Contact " << idStr << " contact=" << open << endl;
 }

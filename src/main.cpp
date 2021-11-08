@@ -20,6 +20,8 @@ void setup() {
     Serial.begin(115200);
     Serial << endl << endl;
 
+    SPIFFS.begin();
+
     Homie_setFirmware(FIRMWARE_NAME, FIRMWARE_VERSION);
     Homie.setGlobalInputHandler(updateHandler);
     Homie.setLedPin(HOMIE_LED_PIN, 1);
@@ -28,6 +30,7 @@ void setup() {
 
     Homie.setup();
     thing->setup(); // call device setup only after Homie setup has been called
+ 
 }
 
 unsigned long ms = millis();

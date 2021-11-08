@@ -20,7 +20,7 @@ class RF24Bridge: public Item {
     protected:
         // save list of paired devices to configuration file
         bool saveDevices();
-        RFDevice* createDevice(RFSensorType type, uint16_t id);
+        RFDevice* createDevice(RFSensorType type, uint32_t id);
 
     public:
         RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin);

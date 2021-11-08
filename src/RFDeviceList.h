@@ -21,7 +21,7 @@ class RFDeviceList {
 
     public:
         void insert(RFDevice* device);
-        RFDevice* get(RFSensorType type, uint16_t id);
+        RFDevice* get(RFSensorType type, uint32_t id);
         RFDevListIterator *iterator();
 };
 
