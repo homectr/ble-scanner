@@ -6,16 +6,16 @@
 class RFDevice {
 
     public:
-        RFDeviceType type;
+        RFSensorType type;
         uint32_t id;
         const char* idStr = nullptr;
         uint16_t seqno;
         HomieNode *homie = nullptr;
 
     public:
-        RFDevice(RFDeviceType type, uint32_t id, HomieNode *homie);
-        virtual void update(RFPayload payload){};
-        virtual void cmd(RFPayload payload){};
+        RFDevice(RFSensorType type, uint32_t id, HomieNode *homie);
+        virtual void update(RFSensorPayload payload){};
+        virtual void cmd(RFSensorPayload payload){};
 
 };
 
@@ -25,7 +25,7 @@ class RFSensorTemp : public RFDevice {
 
     public:
         RFSensorTemp(uint32_t id, HomieNode *homie);
-        void update(RFPayload payload) override;
+        void update(RFSensorPayload payload) override;
 };
 
 class RFSensorContact : public RFDevice {
@@ -33,5 +33,5 @@ class RFSensorContact : public RFDevice {
         bool open = false;
     public:
         RFSensorContact(uint32_t id, HomieNode *homie);
-        void update(RFPayload payload) override;
+        void update(RFSensorPayload payload) override;
 };

@@ -90,13 +90,13 @@ RF24Bridge::RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin):Item(id)
     loadDevices();
 }
 
-RFDevice* RF24Bridge::createDevice(RFDeviceType type, uint16_t id){
+RFDevice* RF24Bridge::createDevice(RFSensorType type, uint16_t id){
     RFDevice* device = nullptr;
     switch (type) {
-    case RFDeviceType::TEMPERATURE:
+    case RFSensorType::TEMPERATURE:
         device = new RFSensorTemp(id, &homie);
         break;
-    case RFDeviceType::CONTACT:
+    case RFSensorType::CONTACT:
         device = new RFSensorContact(id, &homie);
         break;
     
@@ -118,7 +118,7 @@ void RF24Bridge::startPairing(){
     RFActuatorPacket p;
     p.seqno = ms;
     p.dstAdr = 0xFFFFFFFF;
-    p.pktType = RFPacketType::PAIRING;
+    p.pktType = RFPacketType::SCAN;
     for(int i=0;i<3;i++){
         radio->writeFast(&p, sizeof(p));
         delay(20);
@@ -163,7 +163,7 @@ bool RF24Bridge::loadDevices(){
             uint8_t devT = line.substring(0,i-1).toInt();
             uint16_t devA = line.substring(i+1).toInt();
             DEBUG_PRINT("[RFB-ld] device type=%d adr=%X\n",devT, devA);
-            RFDevice *d = createDevice((RFDeviceType)devT, devA);
+            RFDevice *d = createDevice((RFSensorType)devT, devA);
             if (d) {
                 devices.insert(d);
                 j++;

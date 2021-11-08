@@ -14,7 +14,7 @@ void RFDeviceList::insert(RFDevice* device){
     if (j) j->next = d;    
 }
 
-RFDevice* RFDeviceList::get(RFDeviceType type, uint16_t id){
+RFDevice* RFDeviceList::get(RFSensorType type, uint16_t id){
     RFDeviceListEntry* i = list;
     while (i && i->device->type <= type && i->device->id < id) {
         i = i->next;

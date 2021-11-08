@@ -3,7 +3,7 @@
 //#define NODEBUG_PRINT
 #include "debug_print.h"
 
-RFDevice::RFDevice(RFDeviceType type, uint32_t id, HomieNode *homie){
+RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
     this->type=type; 
     this->id=id;
     char buf[20];
@@ -14,10 +14,10 @@ RFDevice::RFDevice(RFDeviceType type, uint32_t id, HomieNode *homie){
     
     switch (type)
     {
-    case RFDeviceType::TEMPERATURE: 
+    case RFSensorType::TEMPERATURE: 
         memcpy(buf,"temp_",bufSize);
         break;
-    case RFDeviceType::CONTACT: 
+    case RFSensorType::CONTACT: 
         memcpy(buf,"contact_",bufSize);
         break;
     
@@ -35,7 +35,7 @@ RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(TEMPERATURE, 
     homie->advertise("temp").setDatatype("Number:Temperature");
 }
 
-void RFSensorTemp:: update(RFPayload payload){
+void RFSensorTemp:: update(RFSensorPayload payload){
     memcpy((void*)&temp,(void*)&payload,4);
     
     // update Homie property
@@ -48,7 +48,7 @@ RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(CONTACT
     homie->advertise(idStr).setDatatype("Contact");
 }
 
-void RFSensorContact::update(RFPayload payload){
+void RFSensorContact::update(RFSensorPayload payload){
     open = payload[0];
 
     // update Homie property
