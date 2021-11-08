@@ -13,6 +13,9 @@
 Thing::Thing(){
     // create properties for device
     homieDevice.advertise("cmd").setDatatype("string").settable(cmdHandler);
+
+    // create items
+    item = new RF24Bridge("rf24brg", NRF_CEPIN, NRF_CSNPIN);
     
     DEBUG_PRINT("[Thing:Thing] Thing created\n");
 }
@@ -24,14 +27,15 @@ void Thing::setup(){
         CONSOLE("Homie not configured. Skipping Thing setup. Loop will be ignored.\n");
         return;
     }
-
-    DEBUG_PRINT("[Thing:Setup] Creating items\n");
-
-    item = new RF24Bridge("rf24brg", NRF_CEPIN, NRF_CSNPIN);
-
+    
     DEBUG_PRINT("[Thing:Setup] Completed\n");
 
     configured = true;
+}
+
+bool Thing::updateHandler(const HomieNode& node, const String& property, const String& value){
+    // call all update handlers for all items until one returns true
+    return item->updateHandler(property,value);
 }
 
 void Thing::loop(){

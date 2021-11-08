@@ -7,7 +7,6 @@
 class Thing {
     public:
         HomieNode homieDevice = HomieNode("thing", "Thing", "thing");
-        HomieNode homieSwitches = HomieNode("rf24brg", "RF24 Bridge", "rf24brg");
 
     protected:
         unsigned long seqStatusUpdatedOn = 0;
@@ -24,6 +23,7 @@ class Thing {
         void setup(); // call after Homie.setup()
         void loop();
         bool isConfigured(){return configured;};
+        bool updateHandler(const HomieNode& node, const String& property, const String& value);
 
 };
 

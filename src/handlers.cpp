@@ -27,10 +27,7 @@ bool updateHandler(const HomieNode &node, const HomieRange &range, const String 
     bool updated = false;
     String newValue = value;
 
-    if (strcmp(node.getId(),"switch") == 0){
-        
-        updated = true;
-    }
+    updated = thing->updateHandler(node,property,value);
 
     if (updated) {
         node.setProperty(property).send(newValue);
