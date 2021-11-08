@@ -42,25 +42,18 @@ void RF24Bridge::loop(){
     radio->read(&buffer,sizeof(buffer));
 
     if (!lastDevice || buffer.srcAdr != lastDevice->id || buffer.deviceType != lastDevice->type) {
-        DEBUG_PRINT("here1\n");
         lastDevice = devices.get(buffer.deviceType, buffer.srcAdr);
-        DEBUG_PRINT("here2\n");
         if (!lastDevice && isPairing) {
-            DEBUG_PRINT("here3\n");
             RFDevice* d = createDevice(buffer.deviceType, buffer.srcAdr);
-            DEBUG_PRINT("here4\n");
             if (d) { 
                 devices.insert(d);
                 devicesUpdated = true;
-                DEBUG_PRINT("here5\n");
             }
             else CONSOLE("[RFB] Warning: Unknown device type = %d\n",buffer.deviceType);
             lastDevice = d;
         }
         update = lastDevice != nullptr;
-        DEBUG_PRINT("here7\n");
     } else {
-        DEBUG_PRINT("here6\n");
         update = lastDevice->seqno != buffer.seqno;
     }
 
