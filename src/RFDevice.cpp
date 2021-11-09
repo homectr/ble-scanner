@@ -14,13 +14,13 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
     
     switch (type) {
     case RFSensorType::TEMPERATURE: 
-        strncpy(buf,"temp_",bufSize);
+        strncpy(buf,"temp",bufSize);
         break;
     case RFSensorType::CONTACT: 
-        strncpy(buf,"contact_",bufSize);
+        strncpy(buf,"contact",bufSize);
         break;
     case RFSensorType::HUMIDITY: 
-        strncpy(buf,"humidity_",bufSize);
+        strncpy(buf,"humidity",bufSize);
         break;
     
     default:
@@ -32,13 +32,13 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
     this->homie = homie;
     
     // each device shall have a property for triggering identification processs of such device
-    String s = String(idStr)+"_identify";
+    String s = String(idStr)+"identify";
     homie->advertise(strdup(s.c_str())).setDatatype("boolean").settable().setRetained(false);
 }
 
 RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::TEMPERATURE, id, homie){
     DEBUG_PRINT(PSTR("[RFS] Creating sensor type=Temperature id=%s\n"),idStr);
-    homie->advertise(this->idStr).setDatatype("float");
+    homie->advertise(this->idStr).setDatatype("float").setRetained(true);
 }
 
 void RFSensorTemp:: update(RFSensorPayload& payload){
@@ -52,7 +52,7 @@ void RFSensorTemp:: update(RFSensorPayload& payload){
 
 RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::CONTACT, id, homie){
     DEBUG_PRINT(PSTR("[RFS] Creating sensor type=Contact id=%s\n"),idStr);
-    homie->advertise(this->idStr).setDatatype("boolean");
+    homie->advertise(this->idStr).setDatatype("boolean").setRetained(true);
 }
 
 void RFSensorContact::update(RFSensorPayload& payload){
@@ -65,7 +65,7 @@ void RFSensorContact::update(RFSensorPayload& payload){
 
 RFSensorHumidity::RFSensorHumidity(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::HUMIDITY, id, homie){
     DEBUG_PRINT(PSTR("[RFS] Creating sensor type=Humidity id=%s\n"),idStr);
-    homie->advertise(this->idStr).setDatatype("float");
+    homie->advertise(this->idStr).setDatatype("float").setRetained(true);
 }
 
 void RFSensorHumidity:: update(RFSensorPayload& payload){

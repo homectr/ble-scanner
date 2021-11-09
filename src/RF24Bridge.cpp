@@ -173,7 +173,7 @@ bool RF24Bridge::loadDevices(){
         DEBUG_PRINT(PSTR("[RFB-ld] line=%s\n"),line.c_str());
         int i = line.indexOf(',');
         if (i>0) {
-            uint8_t devT = line.substring(0,i-1).toInt();
+            uint8_t devT = line.substring(0,i).toInt();
             uint32_t devA = line.substring(i+1).toInt();
             DEBUG_PRINT(PSTR("[RFB-ld] device type=%d adr=%X\n"),devT, devA);
             RFDevice *d = createDevice((RFSensorType)devT, devA);
@@ -198,7 +198,7 @@ bool RF24Bridge::updateHandler(const String& property, const String& value){
         return true;
     }
 
-    int i = property.indexOf("_identify");
+    int i = property.indexOf("identify");
     if (i > 0) {
         String s = property.substring(0,i).c_str();
         DEBUG_PRINT(PSTR("[RFB-uh] Request for identification for %s\n"),s.c_str());
