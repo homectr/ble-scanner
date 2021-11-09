@@ -30,6 +30,10 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
     snprintf(buf+bufPos,bufSize-bufPos-1,"%08X",id);
     this->idStr = strdup(buf);
     this->homie = homie;
+    
+    // each device shall have a property for triggering identification processs of such device
+    String s = String(idStr)+"_identify";
+    homie->advertise(strdup(s.c_str())).setDatatype("boolean").settable().setRetained(false);
 }
 
 RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::TEMPERATURE, id, homie){

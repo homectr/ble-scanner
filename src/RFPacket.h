@@ -10,7 +10,8 @@ enum RFSensorType: uint8_t {
 
 enum RFPacketType: uint8_t {
     SCAN,
-    DATA
+    DATA,
+    IDENTIFY
 };
 
 using RFSensorPayload = uint8_t[22];

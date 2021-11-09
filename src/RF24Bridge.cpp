@@ -42,7 +42,7 @@ void RF24Bridge::loop(){
     radio->read(&buffer,sizeof(buffer));
 
     if (!lastDevice || buffer.srcAdr != lastDevice->id || buffer.deviceType != lastDevice->type) {
-        lastDevice = devices.get(buffer.deviceType, buffer.srcAdr);
+        lastDevice = devices.get(buffer.srcAdr);
         if (!lastDevice && isPairing) {
             RFDevice* d = createDevice(buffer.deviceType, buffer.srcAdr);
             if (d) { 
@@ -192,10 +192,42 @@ bool RF24Bridge::loadDevices(){
 bool RF24Bridge::updateHandler(const String& property, const String& value){
     if (property == "pairing"){
         if (value == "true") {
+            DEBUG_PRINT("[RFB-uh] Request for pairing process\n");
             if (!isPairing) startPairing();
-            return true;
         }
+        return true;
+    }
+
+    int i = property.indexOf("_identify");
+    if (i > 0) {
+        String s = property.substring(0,i).c_str();
+        DEBUG_PRINT(PSTR("[RFB-uh] Request for identification for %s\n"),s.c_str());
+        RFDevice* d = devices.get(s.c_str());
+        if (d) identify(d);
+        else {
+            DEBUG_PRINT(PSTR("[RFB-uh] Device not registered %s.\n"),s.c_str());
+        }
+        return true;
     }
 
     return false;
 };
+
+void RF24Bridge::identify(RFDevice* device){
+    if (!device) return;
+    CONSOLE(PSTR("[RFB] Sending identification request to %s\n"),device->idStr);
+    radio->stopListening();
+    // lower output power -> newly paired sensor has to be close to the bridge -> security
+    radio->setPALevel(RF24_PA_MAX);
+    // open pipe for pairing
+    radio->openWritingPipe(RF24BR_ACTUATOR_ADDRESS);
+    
+    RFActuatorPacket p;
+    p.seqno = millis();
+    p.dstAdr = device->id;
+    p.pktType = RFPacketType::IDENTIFY;
+    for(int i=0;i<3;i++){
+        radio->writeFast(&p, sizeof(p));
+        delay(20);
+    }
+}

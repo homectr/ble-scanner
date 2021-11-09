@@ -29,6 +29,8 @@ class RF24Bridge: public Item {
         void startPairing();
         // load list of paired devices from configuration file
         bool loadDevices();
+        // asks device to identify itself, e.g. visually
+        void identify(RFDevice*);
         virtual bool updateHandler(const String& property, const String& value) override;
 
 };

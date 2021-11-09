@@ -16,13 +16,21 @@ void RFDeviceList::insert(RFDevice* device){
     
 }
 
-RFDevice* RFDeviceList::get(RFSensorType type, uint32_t id){
+RFDevice* RFDeviceList::get(uint32_t id){
     RFDeviceListEntry* i = list;
-    while (i && i->device->type <= type && i->device->id < id) {
-        i = i->next;
-    }
-    if (i && i->device->type == type && i->device->id == id) return i->device;
-    else return nullptr;
+    while (i && i->device->id < id) i = i->next;
+    if (i && i->device->id == id) return i->device;
+
+    return nullptr;
+}
+
+RFDevice* RFDeviceList::get(const char* idstr){
+    RFDeviceListEntry* i = list;
+    while (i && strcmp(i->device->idStr,idstr) != 0) i = i->next;
+
+    if (i) return i->device;
+
+    return nullptr;
 }
 
 RFDevListIterator::RFDevListIterator(RFDeviceListEntry *entry){
