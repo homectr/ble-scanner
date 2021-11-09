@@ -91,7 +91,7 @@ RF24Bridge::RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin):Item(id)
     radio->printPrettyDetails();
     #endif
 
-    homie.advertise("pairing").setDatatype("boolean").settable();
+    homie.advertise("pairing").setDatatype("boolean").settable().setRetained(false);
 
     loadDevices();
 }
@@ -104,6 +104,9 @@ RFDevice* RF24Bridge::createDevice(RFSensorType type, uint32_t id){
         break;
     case RFSensorType::CONTACT:
         device = new RFSensorContact(id, &homie);
+        break;
+    case RFSensorType::HUMIDITY:
+        device = new RFSensorHumidity(id, &homie);
         break;
     
     default:

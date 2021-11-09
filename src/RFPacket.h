@@ -4,7 +4,8 @@
 
 enum RFSensorType: uint8_t {
     TEMPERATURE,
-    CONTACT
+    CONTACT,
+    HUMIDITY
 };
 
 enum RFPacketType: uint8_t {

@@ -35,3 +35,11 @@ class RFSensorContact : public RFDevice {
         RFSensorContact(uint32_t id, HomieNode *homie);
         void update(RFSensorPayload& payload) override;
 };
+
+class RFSensorHumidity : public RFDevice {
+    public:
+        float hum = 0;
+    public:
+        RFSensorHumidity(uint32_t id, HomieNode *homie);
+        void update(RFSensorPayload& payload) override;
+};

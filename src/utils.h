@@ -13,3 +13,4 @@
  */
 
 int getToken(char* dst, size_t dstSize, const char* src, char separator, int pos);
+
