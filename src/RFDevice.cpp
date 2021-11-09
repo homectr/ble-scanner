@@ -12,13 +12,15 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
 
     memset(buf, 0, bufSize);
     
-    switch (type)
-    {
+    switch (type) {
     case RFSensorType::TEMPERATURE: 
-        memcpy(buf,"temp_",bufSize);
+        strncpy(buf,"temp_",bufSize);
         break;
     case RFSensorType::CONTACT: 
-        memcpy(buf,"contact_",bufSize);
+        strncpy(buf,"contact_",bufSize);
+        break;
+    case RFSensorType::HUMIDITY: 
+        strncpy(buf,"humidity_",bufSize);
         break;
     
     default:
@@ -30,28 +32,43 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
     this->homie = homie;
 }
 
-RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(TEMPERATURE, id, homie){
+RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::TEMPERATURE, id, homie){
     DEBUG_PRINT("[RFS] Creating sensor type=Temperature id=%s\n",idStr);
-    homie->advertise("temp").setDatatype("Number:Temperature");
+    homie->advertise(this->idStr).setDatatype("float");
 }
 
 void RFSensorTemp:: update(RFSensorPayload& payload){
-    memcpy((void*)&temp,(void*)&payload,4);
-    
+    char* e;
+    temp = strtod((char*)payload, &e);
+
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(temp));
     Homie.getLogger() << millis() << " Sensor-Temp " << idStr << " temp=" << temp << endl;
 }
 
-RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(CONTACT, id, homie){
+RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::CONTACT, id, homie){
     DEBUG_PRINT("[RFS] Creating sensor type=Contact id=%s\n",idStr);
-    homie->advertise(idStr).setDatatype("Contact");
+    homie->advertise(this->idStr).setDatatype("boolean");
 }
 
 void RFSensorContact::update(RFSensorPayload& payload){
     open = payload[0];
 
     // update Homie property
-    if (Homie.isConnected()) homie->setProperty(idStr).send(open?"OPEN":"CLOSED");
+    if (Homie.isConnected()) homie->setProperty(idStr).send(open?"true":"false");
     Homie.getLogger() << millis() << " Sensor-Contact " << idStr << " contact=" << open << endl;
+}
+
+RFSensorHumidity::RFSensorHumidity(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::HUMIDITY, id, homie){
+    DEBUG_PRINT("[RFS] Creating sensor type=Humidity id=%s\n",idStr);
+    homie->advertise(this->idStr).setDatatype("float");
+}
+
+void RFSensorHumidity:: update(RFSensorPayload& payload){
+    char* e;
+    hum = strtod((char*)payload, &e);
+        
+    // update Homie property
+    if (Homie.isConnected()) homie->setProperty(idStr).send(String(hum));
+    Homie.getLogger() << millis() << " Sensor-Hum " << idStr << " hum=" << hum << endl;
 }
