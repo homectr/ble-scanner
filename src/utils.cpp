@@ -5,7 +5,7 @@
 
 int getToken(char* dst, size_t dstSize, const char* src, char separator, int pos){
 
-    DEBUG_PRINT("[getToken] str=%s sep=%c pos=%d\n",src,separator,pos);
+    DEBUG_PRINT(PSTR("[getToken] str=%s sep=%c pos=%d\n"),src,separator,pos);
     int toGo = pos;
 
     const char* ts = src;
@@ -29,7 +29,7 @@ int getToken(char* dst, size_t dstSize, const char* src, char separator, int pos
         tl = src + p - ts; // determine token length
         if (tl+1 > dstSize) return 0; // if too large for destination buffer
         strncpy(dst, ts, tl);
-        DEBUG_PRINT("[getToken] token=%s length=%d\n",dst,tl);
+        DEBUG_PRINT(PSTR("[getToken] token=%s length=%d\n"),dst,tl);
         return tl;
     } 
 

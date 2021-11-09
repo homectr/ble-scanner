@@ -19,15 +19,15 @@ void RF24Bridge::loop(){
     #ifndef NODEBUG_PRINT
     if (millis()-aliveTimer > RF24BR_ALIVE_TIMEOUT){
         aliveTimer = millis();
-        DEBUG_PRINT("[RFB] alive ms=%lu\n",millis());
+        DEBUG_PRINT(PSTR("[RFB] alive ms=%lu\n"),millis());
     }
     #endif
 
     if (isPairing && millis()-pairingTimer > RF24BR_PAIRING_TIMEOUT) {
         isPairing = false;
-        CONSOLE("[RFB] Pairing mode ended\n");
+        CONSOLE(PSTR("[RFB] Pairing mode ended\n"));
         if (devicesUpdated) {
-            CONSOLE("[RFB] List of devices updated.\n");
+            CONSOLE(PSTR("[RFB] List of devices updated.\n"));
             saveDevices();
         }
     }
@@ -37,7 +37,7 @@ void RF24Bridge::loop(){
     RFSensorPacket buffer;
     bool update = false;
 
-    DEBUG_PRINT("[RFB] Data available %d ",sizeof(buffer));
+    DEBUG_PRINT(PSTR("[RFB] Data available %d "),sizeof(buffer));
     
     radio->read(&buffer,sizeof(buffer));
 
@@ -49,7 +49,7 @@ void RF24Bridge::loop(){
                 devices.insert(d);
                 devicesUpdated = true;
             }
-            else CONSOLE("[RFB] Warning: Unknown device type = %d\n",buffer.deviceType);
+            else CONSOLE(PSTR("[RFB] Warning: Unknown device type = %d\n"),buffer.deviceType);
             lastDevice = d;
         }
         update = lastDevice != nullptr;
@@ -59,25 +59,25 @@ void RF24Bridge::loop(){
 
     if (lastDevice) {
         if (update) {
-            DEBUG_PRINT(" type=%d adr=%08X seq=%u lastDev=%X\n", buffer.deviceType, buffer.srcAdr, buffer.seqno, lastDevice);
+            DEBUG_PRINT(PSTR(" type=%d adr=%08X seq=%u lastDev=%X\n"), buffer.deviceType, buffer.srcAdr, buffer.seqno, lastDevice);
             lastDevice->update(buffer.payload);
             lastDevice->seqno = buffer.seqno;
         } else {
-            DEBUG_PRINT(" type=%d adr=%X seq=%u duplicate\n", buffer.deviceType, buffer.srcAdr, buffer.seqno);
+            DEBUG_PRINT(PSTR(" type=%d adr=%X seq=%u duplicate\n"), buffer.deviceType, buffer.srcAdr, buffer.seqno);
         }
     } else {
-        DEBUG_PRINT("Unpaired device.\n");
+        DEBUG_PRINT(PSTR("Unpaired device.\n"));
     }
         
 }
 
 RF24Bridge::RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin):Item(id){
-    DEBUG_PRINT("[RFB] Initializing bridge ");
+    DEBUG_PRINT(PSTR("[RFB] Initializing bridge "));
     radio = new RF24(cePin, csnPin);
     if (radio->begin()) {
-        DEBUG_PRINT("success\n");
+        DEBUG_PRINT(PSTR("success\n"));
     } else {
-        DEBUG_PRINT("failed\n");
+        DEBUG_PRINT(PSTR("failed\n"));
     }
     radio->setPALevel(RF24_PA_MAX);
     radio->setDataRate(RF24_250KBPS); // set datarate to 250kbps to enhance range
@@ -117,7 +117,7 @@ RFDevice* RF24Bridge::createDevice(RFSensorType type, uint32_t id){
 }
 
 void RF24Bridge::startPairing(){
-    CONSOLE("[RFB] Pairing mode started\n");
+    CONSOLE(PSTR("[RFB] Pairing mode started\n"));
     radio->stopListening();
     // lower output power -> newly paired sensor has to be close to the bridge -> security
     radio->setPALevel(RF24_PA_MIN);
@@ -137,10 +137,10 @@ void RF24Bridge::startPairing(){
 }
 
 bool RF24Bridge::saveDevices(){
-    DEBUG_PRINT("[RFB] Saving devices\n");
+    DEBUG_PRINT(PSTR("[RFB] Saving devices\n"));
     File f = SPIFFS.open(DEVICE_LIST_FILE_NAME,"w");
     if (!f) {
-        DEBUG_PRINT("[RFB] Error saving devices\n");
+        DEBUG_PRINT(PSTR("[RFB] Error saving devices\n"));
         return false;
     }
     RFDevListIterator *i = devices.iterator();
@@ -148,7 +148,7 @@ bool RF24Bridge::saveDevices(){
     while (!i->end()){
         j++;
         RFDevice *d = i->next();
-        DEBUG_PRINT("Saving type=%s id=%s\n",String(d->type).c_str(),d->idStr);
+        DEBUG_PRINT(PSTR("Saving type=%s id=%s\n"),String(d->type).c_str(),d->idStr);
         f.write(String(d->type).c_str());
         f.write(',');
         f.write(String(d->id).c_str());
@@ -156,32 +156,32 @@ bool RF24Bridge::saveDevices(){
     }
     f.close();
     delete i;
-    DEBUG_PRINT("[RFB] Saved %d devices\n",j);
+    DEBUG_PRINT(PSTR("[RFB] Saved %d devices\n"),j);
     return true;
 }
 
 bool RF24Bridge::loadDevices(){
-    DEBUG_PRINT("[RFB] Loading devices\n");
+    DEBUG_PRINT(PSTR("[RFB] Loading devices\n"));
     File f = SPIFFS.open(DEVICE_LIST_FILE_NAME,"r");
     if (!f) {
-        CONSOLE("[RFB] Error opening list of devices\n");
+        CONSOLE(PSTR("[RFB] Error opening list of devices\n"));
         return false;
     }
     int j = 0;
     while (f.available()){
         String line = f.readStringUntil(CHAR_LINEFEED);
-        DEBUG_PRINT("[RFB-ld] line=%s\n",line.c_str());
+        DEBUG_PRINT(PSTR("[RFB-ld] line=%s\n"),line.c_str());
         int i = line.indexOf(',');
         if (i>0) {
             uint8_t devT = line.substring(0,i-1).toInt();
             uint32_t devA = line.substring(i+1).toInt();
-            DEBUG_PRINT("[RFB-ld] device type=%d adr=%X\n",devT, devA);
+            DEBUG_PRINT(PSTR("[RFB-ld] device type=%d adr=%X\n"),devT, devA);
             RFDevice *d = createDevice((RFSensorType)devT, devA);
             if (d) {
                 devices.insert(d);
                 j++;
             }
-            else CONSOLE("[RFB-ld] Unknown device type %d\n",devT);
+            else CONSOLE(PSTR("[RFB-ld] Unknown device type %d\n"),devT);
         }
     }
     f.close();
@@ -192,7 +192,7 @@ bool RF24Bridge::loadDevices(){
 bool RF24Bridge::updateHandler(const String& property, const String& value){
     if (property == "pairing"){
         if (value == "true") {
-            DEBUG_PRINT("[RFB-uh] Request for pairing process\n");
+            DEBUG_PRINT(PSTR("[RFB-uh] Request for pairing process\n"));
             if (!isPairing) startPairing();
         }
         return true;

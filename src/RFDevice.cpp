@@ -37,7 +37,7 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
 }
 
 RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::TEMPERATURE, id, homie){
-    DEBUG_PRINT("[RFS] Creating sensor type=Temperature id=%s\n",idStr);
+    DEBUG_PRINT(PSTR("[RFS] Creating sensor type=Temperature id=%s\n"),idStr);
     homie->advertise(this->idStr).setDatatype("float");
 }
 
@@ -51,7 +51,7 @@ void RFSensorTemp:: update(RFSensorPayload& payload){
 }
 
 RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::CONTACT, id, homie){
-    DEBUG_PRINT("[RFS] Creating sensor type=Contact id=%s\n",idStr);
+    DEBUG_PRINT(PSTR("[RFS] Creating sensor type=Contact id=%s\n"),idStr);
     homie->advertise(this->idStr).setDatatype("boolean");
 }
 
@@ -64,7 +64,7 @@ void RFSensorContact::update(RFSensorPayload& payload){
 }
 
 RFSensorHumidity::RFSensorHumidity(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::HUMIDITY, id, homie){
-    DEBUG_PRINT("[RFS] Creating sensor type=Humidity id=%s\n",idStr);
+    DEBUG_PRINT(PSTR("[RFS] Creating sensor type=Humidity id=%s\n"),idStr);
     homie->advertise(this->idStr).setDatatype("float");
 }
 

@@ -41,7 +41,7 @@ void loop() {
     #ifndef NODEBUG_PRINT
     if (millis()-ms > ALIVE_TIMER){
         ms = millis();
-        DEBUG_PRINT("[main] alive ms=%lu\n",millis());
+        DEBUG_PRINT(PSTR("[main] alive ms=%lu\n"),millis());
     }
     #endif
     

@@ -17,18 +17,18 @@ Thing::Thing(){
     // create items
     item = new RF24Bridge("rf24brg", NRF_CEPIN, NRF_CSNPIN);
     
-    DEBUG_PRINT("[Thing:Thing] Thing created\n");
+    DEBUG_PRINT(PSTR("[Thing:Thing] Thing created\n"));
 }
 
 void Thing::setup(){
-    DEBUG_PRINT("[Thing:Setup] SETUP\n");
+    DEBUG_PRINT(PSTR("[Thing:Setup] SETUP\n"));
 
     if (!Homie.isConfigured()){
-        CONSOLE("Homie not configured. Skipping Thing setup. Loop will be ignored.\n");
+        CONSOLE(PSTR("Homie not configured. Skipping Thing setup. Loop will be ignored.\n"));
         return;
     }
     
-    DEBUG_PRINT("[Thing:Setup] Completed\n");
+    DEBUG_PRINT(PSTR("[Thing:Setup] Completed\n"));
 
     configured = true;
 }
@@ -42,9 +42,9 @@ void Thing::loop(){
     #ifndef NODEBUG_PRINT
     if (millis()-aliveTimer > 15000){
         aliveTimer = millis();
-        DEBUG_PRINT("[Thing] alive ms=%lu\n",millis());
+        DEBUG_PRINT(PSTR("[Thing] alive ms=%lu\n"),millis());
         if (!isConfigured()) 
-            DEBUG_PRINT("[Thing] not configured. Skipping loop.\n");
+            DEBUG_PRINT(PSTR("[Thing] not configured. Skipping loop.\n"));
     }
     #endif
 
