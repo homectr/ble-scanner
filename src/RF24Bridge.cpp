@@ -59,7 +59,7 @@ void RF24Bridge::loop(){
 
     if (lastDevice) {
         if (update) {
-            DEBUG_PRINT(PSTR(" type=%d adr=%08X seq=%u lastDev=%X\n"), buffer.deviceType, buffer.srcAdr, buffer.seqno, lastDevice);
+            DEBUG_PRINT(PSTR(" type=%d adr=%08X seq=%u lastDev=%X lastDevSeq=%u\n"), buffer.deviceType, buffer.srcAdr, buffer.seqno, lastDevice, lastDevice->seqno);
             lastDevice->update(buffer.payload);
             lastDevice->seqno = buffer.seqno;
         } else {

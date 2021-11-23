@@ -9,7 +9,7 @@ class RFDevice {
         RFSensorType type;
         uint32_t id;
         const char* idStr = nullptr;
-        uint16_t seqno;
+        uint32_t seqno;
         HomieNode *homie = nullptr;
 
     public:
