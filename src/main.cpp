@@ -6,7 +6,7 @@
 //#define NODEBUG_PRINT
 #include "debug_print.h"
 
-#define HOMIE_LED_PIN       2
+#define HOMIE_LED_PIN       4 // D2
 #define FIRMWARE_NAME       "rf24bridge"
 #define FIRMWARE_VERSION    "1.0.0"
 

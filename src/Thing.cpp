@@ -8,7 +8,7 @@
 #include "debug_print.h"
 
 #define NRF_CSNPIN  15  //D8 : use HW CS pin + 3-5kOhm resistor to connect it to GND
-#define NRF_CEPIN   4   //D2
+#define NRF_CEPIN   2   //D4
 
 Thing::Thing(){
     // create properties for device
