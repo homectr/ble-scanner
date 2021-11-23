@@ -3,6 +3,8 @@
 #include "utils.h"
 #include "handlers.h"
 #include "RF24Bridge.h"
+#include <DHT_U.h>
+#include "ItemDHT.h"
 
 #define NODEBUG_PRINT
 #include "debug_print.h"
@@ -10,12 +12,19 @@
 #define NRF_CSNPIN  15  //D8 : use HW CS pin + 3-5kOhm resistor to connect it to GND
 #define NRF_CEPIN   2   //D4
 
+#define DHT_PIN     5   //D1
+
 Thing::Thing(){
     // create properties for device
     homieDevice.advertise("cmd").setDatatype("string").settable(cmdHandler);
 
     // create items
     item = new RF24Bridge("rf24brg", NRF_CEPIN, NRF_CSNPIN);
+
+    // create DHT sensor
+    DHT_Unified *dht = new DHT_Unified(DHT_PIN, DHT22);
+    dht->begin();
+    itemDHT = new ItemDHT("dht",dht);
     
     DEBUG_PRINT(PSTR("[Thing:Thing] Thing created\n"));
 }
@@ -50,5 +59,6 @@ void Thing::loop(){
 
     if (!isConfigured()) return;
     item->loop();
+    itemDHT->loop();
     
 }

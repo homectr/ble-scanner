@@ -15,6 +15,7 @@ class Thing {
         bool configured = false;
 
         Item* item = nullptr;
+        Item* itemDHT = nullptr;
 
         
 
