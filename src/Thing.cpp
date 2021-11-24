@@ -45,7 +45,8 @@ void Thing::setup(){
 bool Thing::updateHandler(const HomieNode& node, const String& property, const String& value){
     // call all update handlers for all items until one returns true
     bool updated = item->updateHandler(property, value);
-    if (!updated) itemDHT->updateHandler(property, value);
+    if (!updated) updated = itemDHT->updateHandler(property, value);
+    return updated;
 }
 
 bool Thing::cmdHandler(const String& value){

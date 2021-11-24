@@ -16,26 +16,22 @@
 #define CHAR_LINEFEED char(10)
 
 void RF24Bridge::processPktData(RFSensorPacket &buffer){
-    if (!lastDevice) { // no packet processed before
-        lastDevice = devices.get(buffer.srcAdr); // find device in the list of paired devices
-        if (!lastDevice && isPairing) { // device not found, but pairing is active
-            RFDevice* d = createDevice(buffer.deviceType, buffer.srcAdr);
-            if (d) { 
-                devices.insert(d);
-                DEBUG_PRINT(PSTR("[RFB-Data] Device added to the list. len=%d\n"),devices.length());
-                devicesUpdated = true;
-            }
-            else CONSOLE(PSTR("[RFB-Data] Warning: Unknown device type = %d\n"),buffer.deviceType);
-            lastDevice = d;
+    RFDevice* d = devices.get(buffer.srcAdr); // find device in the list of paired devices
+    if (!d && isPairing) { // device not found, but pairing is active
+        d = createDevice(buffer.deviceType, buffer.srcAdr);
+        if (d) { 
+            devices.insert(d);
+            DEBUG_PRINT(PSTR("[RFB-Data] Device added to the list. len=%d\n"),devices.length());
+            devicesUpdated = true;
         }
+        else CONSOLE(PSTR("[RFB-Data] Warning: Unknown device type = %d\n"),buffer.deviceType);
     }
 
-    if (lastDevice) {
-        DEBUG_PRINT(PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X seq=%u\n"), buffer.pktType, buffer.deviceType, buffer.srcAdr, buffer.seqno);
-        lastDevice->update(buffer.payload);
-        lastDevice->seqno = buffer.seqno;
+    if (d) {
+        DEBUG_PRINT(PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X\n"), d->type, d->id);
+        d->update(buffer.payload);
     } else {
-        DEBUG_PRINT(PSTR("Unpaired device.\n"));
+        CONSOLE(PSTR("Device not paired. adr=0x%X type=%d\n"),buffer.srcAdr, buffer.deviceType);
     }
 
 }
@@ -99,7 +95,7 @@ void RF24Bridge::loop(){
     radio->read(&buffer,sizeof(buffer));
 
     bool duplicatePkt = (buffer.srcAdr == lastDeviceAdr && buffer.deviceType == lastDeviceType);
-    DEBUG_PRINT(PSTR("[RFB] Data available device=0x%X lastDevice=0x%X duplicate=%d\n"),buffer.srcAdr, lastDevice?lastDevice->id:0, duplicatePkt);
+    DEBUG_PRINT(PSTR("[RFB] Data available device=0x%X lastDevice=0x%X duplicate=%d\n"),buffer.srcAdr, lastDeviceAdr, duplicatePkt);
 
     if (!duplicatePkt) {
         lastDeviceAdr = buffer.srcAdr;

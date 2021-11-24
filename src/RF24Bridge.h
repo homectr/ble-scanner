@@ -13,7 +13,6 @@ class RF24Bridge: public Item {
     RFDeviceList devices; // list of connected devices
     bool devicesUpdated; // if the list of devices updated since last pairing
 
-    RFDevice* lastDevice = nullptr; // last updated device - for caching and duplicate packet identification
     uint8_t lastDeviceType = 0;
     uint32_t lastDeviceAdr = 0;
 

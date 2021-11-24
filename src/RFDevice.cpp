@@ -30,10 +30,10 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
     snprintf(buf+bufPos,bufSize-bufPos-1,"%08X",id);
     this->idStr = strdup(buf);
     this->homie = homie;
-    
-    // each device shall have a property for triggering identification processs of such device
-    String s = String(idStr)+"identify";
-    homie->advertise(strdup(s.c_str())).setDatatype("boolean").settable().setRetained(false);
+}
+
+RFDevice::~RFDevice(){
+    free(idStr);
 }
 
 RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::TEMPERATURE, id, homie){
@@ -42,8 +42,7 @@ RFSensorTemp::RFSensorTemp(uint32_t id, HomieNode *homie):RFDevice(RFSensorType:
 }
 
 void RFSensorTemp:: update(RFSensorPayload& payload){
-    char* e;
-    temp = strtod((char*)payload, &e);
+    temp = strtod((char*)payload, nullptr);
 
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(temp));
@@ -76,5 +75,5 @@ void RFSensorHumidity:: update(RFSensorPayload& payload){
         
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(hum));
-    CONSOLE(PSTR("%d Sensor-hum id=0x%X rh=%.2f\n"),millis(),id,hum);
+    CONSOLE(PSTR("%d Sensor-Hum id=0x%X rh=%.2f\n"),millis(),id,hum);
 }
