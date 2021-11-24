@@ -15,12 +15,17 @@ class RF24Bridge: public Item {
     RFDevice* lastDevice = nullptr; // last updated device - for caching and duplicate packet identification
     bool isPairing = false; // is pairing mode active?
     unsigned long pairingTimer = 0; 
-    HomieNode homie = HomieNode("rf24brg", "RF24 Bridge", "rf24brg");
+    HomieNode homie = HomieNode("rf24", "RF24 Bridge", "rf24");
+
+    String _announced = ""; // list of announced devices
+    unsigned long _announceTimer = 0;
 
     protected:
         // save list of paired devices to configuration file
         bool saveDevices();
         RFDevice* createDevice(RFSensorType type, uint32_t id);
+        void processPktData(RFSensorPacket &buffer);
+        void processPktAnnounce(RFSensorPacket &buffer);
 
     public:
         RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin);
@@ -32,5 +37,6 @@ class RF24Bridge: public Item {
         // asks device to identify itself, e.g. visually
         void identify(RFDevice*);
         virtual bool updateHandler(const String& property, const String& value) override;
+        virtual bool cmdHandler(const String& value) override;
 
 };

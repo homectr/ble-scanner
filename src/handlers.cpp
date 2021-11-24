@@ -6,12 +6,14 @@
 
 extern Thing* thing;
 
-bool cmdHandler(const HomieRange &range, const String &value){
+bool globalCmdHandler(const HomieRange& range, const String& value){
     bool updated = false;
 
     if (value == "reset") {
         updated = true;
     }
+
+    if (!updated) updated = thing->cmdHandler(value);
 
     if (updated) {
         thing->homieDevice.setProperty("cmd").send(value);  // Update the state of the led
@@ -22,7 +24,7 @@ bool cmdHandler(const HomieRange &range, const String &value){
 }
 
 
-bool updateHandler(const HomieNode &node, const HomieRange &range, const String &property, const String &value){
+bool globalUpdateHandler(const HomieNode &node, const HomieRange &range, const String &property, const String &value){
     DEBUG_PRINT("[updHandler] node=%s prop=%s val=%s\n",node.getId(),property.c_str(),value.c_str());
     bool updated = false;
     String newValue = value;

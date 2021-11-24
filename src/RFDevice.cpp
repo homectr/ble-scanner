@@ -14,13 +14,13 @@ RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){
     
     switch (type) {
     case RFSensorType::TEMPERATURE: 
-        strncpy(buf,"temp",bufSize);
+        strncpy(buf,DEVICE_STR_SENSOR_TEMP,bufSize);
         break;
     case RFSensorType::CONTACT: 
-        strncpy(buf,"contact",bufSize);
+        strncpy(buf,DEVICE_STR_SENSOR_CONTACT,bufSize);
         break;
     case RFSensorType::HUMIDITY: 
-        strncpy(buf,"humidity",bufSize);
+        strncpy(buf,DEVICE_STR_SENSOR_HUMIDITY,bufSize);
         break;
     
     default:
@@ -47,7 +47,7 @@ void RFSensorTemp:: update(RFSensorPayload& payload){
 
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(temp));
-    Homie.getLogger() << millis() << " Sensor-Temp " << idStr << " temp=" << temp << endl;
+    CONSOLE(PSTR("%d Sensor-Temp id=0x%X temp=%.2f\n"),millis(),id,temp);
 }
 
 RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::CONTACT, id, homie){
@@ -56,11 +56,13 @@ RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(RFSenso
 }
 
 void RFSensorContact::update(RFSensorPayload& payload){
-    open = payload[0];
+    char buf[10];
+    strncpy(buf,(char*)payload,10);
+    open = strcmp(buf,"0") == 0;
 
     // update Homie property
-    if (Homie.isConnected()) homie->setProperty(idStr).send(open?"true":"false");
-    Homie.getLogger() << millis() << " Sensor-Contact " << idStr << " contact=" << open << endl;
+    if (Homie.isConnected()) homie->setProperty(idStr).send(open?"false":"true");
+    CONSOLE(PSTR("%d Sensor-Contact id=0x%X status=%d\n"),millis(),id,!open);
 }
 
 RFSensorHumidity::RFSensorHumidity(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::HUMIDITY, id, homie){
@@ -74,5 +76,5 @@ void RFSensorHumidity:: update(RFSensorPayload& payload){
         
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(hum));
-    Homie.getLogger() << millis() << " Sensor-Hum " << idStr << " hum=" << hum << endl;
+    CONSOLE(PSTR("%d Sensor-hum id=0x%X rh=%.2f\n"),millis(),id,hum);
 }

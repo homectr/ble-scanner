@@ -22,9 +22,12 @@ class RFDeviceList {
 
     public:
         void insert(RFDevice* device);
+        void clear();
+        void clear(uint32_t id);
         RFDevice* get(uint32_t id);
         RFDevice* get(const char* idstr);
         uint16_t length(){return _length;};
         RFDevListIterator *iterator();
+
 };
 

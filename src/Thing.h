@@ -25,6 +25,7 @@ class Thing {
         void loop();
         bool isConfigured(){return configured;};
         bool updateHandler(const HomieNode& node, const String& property, const String& value);
+        bool cmdHandler(const String& value);
 
 };
 

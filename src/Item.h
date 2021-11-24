@@ -10,4 +10,5 @@ class Item {
         Item(const char* id){this->id=id;};
         const char* getId(){return id;};
         virtual bool updateHandler(const String& property, const String& value){return false;};
+        virtual bool cmdHandler(const String& value){return false;};
 };

@@ -16,7 +16,7 @@
 
 Thing::Thing(){
     // create properties for device
-    homieDevice.advertise("cmd").setDatatype("string").settable(cmdHandler);
+    homieDevice.advertise("cmd").setDatatype("string").settable(globalCmdHandler);
 
     // create items
     item = new RF24Bridge("rf24brg", NRF_CEPIN, NRF_CSNPIN);
@@ -44,7 +44,13 @@ void Thing::setup(){
 
 bool Thing::updateHandler(const HomieNode& node, const String& property, const String& value){
     // call all update handlers for all items until one returns true
-    return item->updateHandler(property,value);
+    bool updated = item->updateHandler(property, value);
+    if (!updated) itemDHT->updateHandler(property, value);
+}
+
+bool Thing::cmdHandler(const String& value){
+    bool updated = item->cmdHandler(value);
+    return updated;
 }
 
 void Thing::loop(){

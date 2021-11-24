@@ -14,6 +14,56 @@
 
 #define CHAR_LINEFEED char(10)
 
+void RF24Bridge::processPktData(RFSensorPacket &buffer){
+    bool updateSensor = false;
+
+    if (!lastDevice) { // no packet processed before
+        lastDevice = devices.get(buffer.srcAdr); // find device in the list of paired devices
+        if (!lastDevice && isPairing) { // device not found, but pairing is active
+            RFDevice* d = createDevice(buffer.deviceType, buffer.srcAdr);
+            if (d) { 
+                devices.insert(d);
+                DEBUG_PRINT(PSTR("[RFB-Data] Device added to the list. len=%d\n"),devices.length());
+                devicesUpdated = true;
+            }
+            else CONSOLE(PSTR("[RFB-Data] Warning: Unknown device type = %d\n"),buffer.deviceType);
+            lastDevice = d;
+        }
+    }
+
+    if (lastDevice) {
+        DEBUG_PRINT(PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X seq=%u\n"), buffer.pktType, buffer.deviceType, buffer.srcAdr, buffer.seqno);
+        lastDevice->update(buffer.payload);
+        lastDevice->seqno = buffer.seqno;
+    } else {
+        DEBUG_PRINT(PSTR("Unpaired device.\n"));
+    }
+
+}
+
+void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
+    if (!_announceTimer) _announceTimer = millis();
+    if (_announced.length()>0) _announced += ", ";
+
+    switch (buffer.deviceType) {
+        case RFSensorType::CONTACT :
+            _announced += DEVICE_STR_SENSOR_CONTACT;
+            break;
+        case RFSensorType::TEMPERATURE :
+            _announced += DEVICE_STR_SENSOR_TEMP;
+            break;
+        case RFSensorType::HUMIDITY :
+            _announced += DEVICE_STR_SENSOR_HUMIDITY;
+            break;
+
+    }
+
+    char adr[10];
+    snprintf(adr,10,":%08X",buffer.srcAdr);
+    _announced += adr;
+
+}
+
 void RF24Bridge::loop(){
     radio->startListening();
     #ifndef NODEBUG_PRINT
@@ -33,44 +83,30 @@ void RF24Bridge::loop(){
         homie.setProperty("pairing").setQos(1).send("false");
     }
 
-    if (!radio->available()) return;
-
-    RFSensorPacket buffer;
-    bool update = false;
-
-    DEBUG_PRINT(PSTR("[RFB] Data available %d "),sizeof(buffer));
-    
-    radio->read(&buffer,sizeof(buffer));
-
-    if (!lastDevice || buffer.srcAdr != lastDevice->id || buffer.deviceType != lastDevice->type) {
-        lastDevice = devices.get(buffer.srcAdr);
-        if (!lastDevice && isPairing) {
-            RFDevice* d = createDevice(buffer.deviceType, buffer.srcAdr);
-            if (d) { 
-                devices.insert(d);
-                DEBUG_PRINT(PSTR("[RFB] Device added to the list. len=%d\n"),devices.length());
-                devicesUpdated = true;
-            }
-            else CONSOLE(PSTR("[RFB] Warning: Unknown device type = %d\n"),buffer.deviceType);
-            lastDevice = d;
-        } else {
-            DEBUG_PRINT(PSTR("[RFB] Device already known. id=0x%X srcadr=0x%X\n"),lastDevice->id, buffer.srcAdr);
-        }
-        update = lastDevice != nullptr;
-    } else {
-        update = lastDevice->seqno != buffer.seqno;
+    if (_announced.length()>0 && millis()-_announceTimer > 5000){
+        homie.setProperty("newdevices").setQos(1).send(_announced);
+        _announced = "";
     }
 
-    if (lastDevice) {
-        if (update) {
-            DEBUG_PRINT(PSTR(" type=%d adr=0x%08X seq=%u lastDev=0x%X lastDevSeq=%u\n"), buffer.deviceType, buffer.srcAdr, buffer.seqno, lastDevice, lastDevice->seqno);
-            lastDevice->update(buffer.payload);
-            lastDevice->seqno = buffer.seqno;
-        } else {
-            DEBUG_PRINT(PSTR(" type=%d adr=0x%X seq=%u duplicate\n"), buffer.deviceType, buffer.srcAdr, buffer.seqno);
+    if (!radio->available()) return;
+    DEBUG_PRINT(PSTR("[RFB] Data available lastDevice=0x%X\n"),lastDevice);
+
+    RFSensorPacket buffer;
+    radio->read(&buffer,sizeof(buffer));
+    bool duplicatePkt = lastDevice && buffer.srcAdr == lastDevice->id && buffer.deviceType == lastDevice->type;
+
+    if (!duplicatePkt) {
+        switch (buffer.pktType)
+        {
+        case RFPacketType::DATA :
+            processPktData(buffer);
+            break;
+        case RFPacketType::ANNOUNCE :
+            processPktAnnounce(buffer);
+            break;
+        default:
+            break;
         }
-    } else {
-        DEBUG_PRINT(PSTR("Unpaired device.\n"));
     }
         
 }
@@ -96,6 +132,7 @@ RF24Bridge::RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin):Item(id)
     #endif
 
     homie.advertise("pairing").setDatatype("boolean").settable().setRetained(true);
+    homie.advertise("newdevices").setDatatype("string").setRetained(true);
 
     loadDevices();
 }
@@ -190,11 +227,60 @@ bool RF24Bridge::loadDevices(){
         }
     }
     f.close();
-    CONSOLE("[RFB] %d devices loaded\n",j);
+    CONSOLE("[RFB] %d devices loaded\n",devices.length());
     return true;
 }
 
+
+bool RF24Bridge::cmdHandler(const String& value){
+    if (value == "clear-paired"){
+        CONSOLE(PSTR("CLEARING PAIRED DEVICES\n"));
+        devices.clear();
+        saveDevices();
+        return true;
+    }
+
+    if (value.startsWith("clear:")){
+        char i = value.indexOf(':');
+        char buf[10];
+        if (i<0) return false;
+        uint32_t id = strtol(value.substring(i+1).c_str(),0,16);
+        CONSOLE(PSTR("CLEARING PAIRED DEVICE id=0x%X\n"),id);
+        devices.clear(id);
+        saveDevices();
+    }
+
+    if (value.startsWith("pair:")){
+        char i = value.indexOf(':');
+        char buf[10];
+        if (i<0) return false;
+        char j = value.indexOf(':',i+1);
+        if (j<=0) return false;
+        String dt = value.substring(i+1,j-1);
+        uint32_t id = strtol(value.substring(j+1).c_str(),0,16);
+        CONSOLE(PSTR("PAIRING DEVICE type=%s id=0x%X\n"),dt.c_str(), id);
+        RFDevice *d = nullptr;
+        if (dt == DEVICE_STR_SENSOR_HUMIDITY)
+            d = createDevice(RFSensorType::HUMIDITY,id);
+        if (dt == DEVICE_STR_SENSOR_TEMP)
+            d = createDevice(RFSensorType::TEMPERATURE,id);
+        if (dt == DEVICE_STR_SENSOR_CONTACT)
+            d = createDevice(RFSensorType::CONTACT,id);
+
+        if (d) {
+            devices.insert(d);
+            saveDevices();
+            CONSOLE(PSTR("DEVICE PAIRED type=%s id=0x%X\n"),dt.c_str(), id);
+        }
+        return true;
+    }
+
+    return false;
+
+}
+
 bool RF24Bridge::updateHandler(const String& property, const String& value){
+    
     if (property == "pairing"){
         if (value == "true") {
             DEBUG_PRINT(PSTR("[RFB-uh] Request for pairing process\n"));

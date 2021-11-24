@@ -23,7 +23,7 @@ void setup() {
     SPIFFS.begin();
 
     Homie_setFirmware(FIRMWARE_NAME, FIRMWARE_VERSION);
-    Homie.setGlobalInputHandler(updateHandler);
+    Homie.setGlobalInputHandler(globalUpdateHandler);
     Homie.setLedPin(HOMIE_LED_PIN, 1);
 
     thing = new Thing();

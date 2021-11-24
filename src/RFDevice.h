@@ -3,6 +3,10 @@
 #include <Homie.h>
 #include "RFPacket.h"
 
+#define DEVICE_STR_SENSOR_TEMP "temp"
+#define DEVICE_STR_SENSOR_CONTACT "cont"
+#define DEVICE_STR_SENSOR_HUMIDITY "humd"
+
 class RFDevice {
 
     public:
