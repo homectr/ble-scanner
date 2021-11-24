@@ -248,6 +248,7 @@ bool RF24Bridge::cmdHandler(const String& value){
         CONSOLE(PSTR("CLEARING PAIRED DEVICE id=0x%X\n"),id);
         devices.clear(id);
         saveDevices();
+        return true;
     }
 
     if (value.startsWith("pair:")){

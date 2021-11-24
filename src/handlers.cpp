@@ -7,6 +7,7 @@
 extern Thing* thing;
 
 bool globalCmdHandler(const HomieRange& range, const String& value){
+    DEBUG_PRINT(PSTR("[cmdHandler] val=%s\n"),value.c_str());
     bool updated = false;
 
     if (value == "reset") {
@@ -25,7 +26,7 @@ bool globalCmdHandler(const HomieRange& range, const String& value){
 
 
 bool globalUpdateHandler(const HomieNode &node, const HomieRange &range, const String &property, const String &value){
-    DEBUG_PRINT("[updHandler] node=%s prop=%s val=%s\n",node.getId(),property.c_str(),value.c_str());
+    DEBUG_PRINT(PSTR("[updHandler] node=%s prop=%s val=%s\n"),node.getId(),property.c_str(),value.c_str());
     bool updated = false;
     String newValue = value;
 
