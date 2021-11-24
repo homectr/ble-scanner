@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <FS.h>
 
 //#define NODEBUG_PRINT
 #include "debug_print.h"
@@ -35,4 +36,11 @@ int getToken(char* dst, size_t dstSize, const char* src, char separator, int pos
 
     return 0;
 
+}
+
+void esp_reset(){
+    CONSOLE(PSTR("RESETING DEVICE in 2 sec\n"));
+    SPIFFS.end();
+    delay(2000);
+    ESP.reset();
 }

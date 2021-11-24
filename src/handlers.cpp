@@ -1,5 +1,6 @@
 #include "handlers.h"
 #include "Thing.h"
+#include "utils.h"
 
 //#define NODEBUG_PRINT
 #include "debug_print.h"
@@ -11,6 +12,7 @@ bool globalCmdHandler(const HomieRange& range, const String& value){
     bool updated = false;
 
     if (value == "reset") {
+        esp_reset();
         updated = true;
     }
 

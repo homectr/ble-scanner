@@ -1,5 +1,6 @@
 #include "RF24Bridge.h"
 #include <FS.h>
+#include "utils.h"
 
 //#define NODEBUG_PRINT
 #include "debug_print.h"
@@ -15,8 +16,6 @@
 #define CHAR_LINEFEED char(10)
 
 void RF24Bridge::processPktData(RFSensorPacket &buffer){
-    bool updateSensor = false;
-
     if (!lastDevice) { // no packet processed before
         lastDevice = devices.get(buffer.srcAdr); // find device in the list of paired devices
         if (!lastDevice && isPairing) { // device not found, but pairing is active
@@ -42,6 +41,8 @@ void RF24Bridge::processPktData(RFSensorPacket &buffer){
 }
 
 void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
+
+    DEBUG_PRINT(PSTR("Announce type=%d id=%X\n"),buffer.deviceType, buffer.srcAdr);
     if (!_announceTimer) _announceTimer = millis();
     if (_announced.length()>0) _announced += ", ";
 
@@ -55,7 +56,9 @@ void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
         case RFSensorType::HUMIDITY :
             _announced += DEVICE_STR_SENSOR_HUMIDITY;
             break;
-
+        default:
+            DEBUG_PRINT(PSTR("Unknown device type\n"));
+            return;
     }
 
     char adr[10];
@@ -79,6 +82,7 @@ void RF24Bridge::loop(){
         if (devicesUpdated) {
             CONSOLE(PSTR("[RFB] List of devices updated.\n"));
             saveDevices();
+            esp_reset(); // reset to reload homie props
         }
         homie.setProperty("pairing").setQos(1).send("false");
     }
@@ -86,16 +90,21 @@ void RF24Bridge::loop(){
     if (_announced.length()>0 && millis()-_announceTimer > 5000){
         homie.setProperty("newdevices").setQos(1).send(_announced);
         _announced = "";
+        _announceTimer = 0;
     }
 
     if (!radio->available()) return;
-    DEBUG_PRINT(PSTR("[RFB] Data available lastDevice=0x%X\n"),lastDevice);
 
     RFSensorPacket buffer;
     radio->read(&buffer,sizeof(buffer));
-    bool duplicatePkt = lastDevice && buffer.srcAdr == lastDevice->id && buffer.deviceType == lastDevice->type;
+
+    bool duplicatePkt = (buffer.srcAdr == lastDeviceAdr && buffer.deviceType == lastDeviceType);
+    DEBUG_PRINT(PSTR("[RFB] Data available device=0x%X lastDevice=0x%X duplicate=%d\n"),buffer.srcAdr, lastDevice?lastDevice->id:0, duplicatePkt);
 
     if (!duplicatePkt) {
+        lastDeviceAdr = buffer.srcAdr;
+        lastDeviceType = buffer.deviceType;
+
         switch (buffer.pktType)
         {
         case RFPacketType::DATA :
@@ -105,8 +114,10 @@ void RF24Bridge::loop(){
             processPktAnnounce(buffer);
             break;
         default:
+            DEBUG_PRINT(PSTR("[brg-loop] Unknown packet type=%d\n"),buffer.pktType);
             break;
         }
+        
     }
         
 }
@@ -233,31 +244,31 @@ bool RF24Bridge::loadDevices(){
 
 
 bool RF24Bridge::cmdHandler(const String& value){
-    if (value == "clear-paired"){
+    if (value == "clear-all"){
         CONSOLE(PSTR("CLEARING PAIRED DEVICES\n"));
         devices.clear();
         saveDevices();
+        esp_reset(); // reset in order to reload homie props
         return true;
     }
 
     if (value.startsWith("clear:")){
         char i = value.indexOf(':');
-        char buf[10];
         if (i<0) return false;
         uint32_t id = strtol(value.substring(i+1).c_str(),0,16);
         CONSOLE(PSTR("CLEARING PAIRED DEVICE id=0x%X\n"),id);
         devices.clear(id);
         saveDevices();
+        esp_reset(); // reset in order to reload homie props
         return true;
     }
 
     if (value.startsWith("pair:")){
         char i = value.indexOf(':');
-        char buf[10];
         if (i<0) return false;
         char j = value.indexOf(':',i+1);
         if (j<=0) return false;
-        String dt = value.substring(i+1,j-1);
+        String dt = value.substring(i+1,j);
         uint32_t id = strtol(value.substring(j+1).c_str(),0,16);
         CONSOLE(PSTR("PAIRING DEVICE type=%s id=0x%X\n"),dt.c_str(), id);
         RFDevice *d = nullptr;
@@ -272,6 +283,7 @@ bool RF24Bridge::cmdHandler(const String& value){
             devices.insert(d);
             saveDevices();
             CONSOLE(PSTR("DEVICE PAIRED type=%s id=0x%X\n"),dt.c_str(), id);
+            esp_reset(); // reset in order to reload homie props
         }
         return true;
     }

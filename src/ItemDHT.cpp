@@ -6,7 +6,7 @@
 ItemDHT::ItemDHT(const char* id, DHT_Unified* dht):Item(id){
     this->dht = dht;
     homie.advertise("temp").setDatatype("float").setRetained(true);
-    homie.advertise("rh").setDatatype("float").setRetained(true);
+    homie.advertise("humd").setDatatype("float").setRetained(true);
 }
 
 void ItemDHT::read(){
@@ -30,7 +30,7 @@ void ItemDHT::read(){
     else {
         DEBUG_PRINT(PSTR("  %s Humidity: %.1f %%\n"),getId(), event.relative_humidity);
         v = String(event.relative_humidity);
-        homie.setProperty("rh").send(v);
+        homie.setProperty("humd").send(v);
     }
 
 }

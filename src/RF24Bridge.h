@@ -12,7 +12,11 @@ class RF24Bridge: public Item {
     RF24 *radio = nullptr;
     RFDeviceList devices; // list of connected devices
     bool devicesUpdated; // if the list of devices updated since last pairing
+
     RFDevice* lastDevice = nullptr; // last updated device - for caching and duplicate packet identification
+    uint8_t lastDeviceType = 0;
+    uint32_t lastDeviceAdr = 0;
+
     bool isPairing = false; // is pairing mode active?
     unsigned long pairingTimer = 0; 
     HomieNode homie = HomieNode("rf24", "RF24 Bridge", "rf24");
