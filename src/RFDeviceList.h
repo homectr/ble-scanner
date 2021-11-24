@@ -18,11 +18,13 @@ class RFDevListIterator {
 
 class RFDeviceList {
     RFDeviceListEntry *list = nullptr;
+    uint16_t _length = 0;
 
     public:
         void insert(RFDevice* device);
         RFDevice* get(uint32_t id);
         RFDevice* get(const char* idstr);
+        uint16_t length(){return _length;};
         RFDevListIterator *iterator();
 };
 

@@ -11,8 +11,10 @@ void RFDeviceList::insert(RFDevice* device){
     RFDeviceListEntry* d = new RFDeviceListEntry();
     d->device = device;
     d->next = i;
-    if (!list) list = d;
-    else if (j) j->next = d;
+    if (!j) list = d;
+    else j->next = d;
+
+    _length++;
     
 }
 
