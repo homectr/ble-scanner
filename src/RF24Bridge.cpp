@@ -94,12 +94,13 @@ void RF24Bridge::loop(){
     RFSensorPacket buffer;
     radio->read(&buffer,sizeof(buffer));
 
-    bool duplicatePkt = (buffer.srcAdr == lastDeviceAdr && buffer.deviceType == lastDeviceType);
-    DEBUG_PRINT(PSTR("[RFB] Data available device=0x%X lastDevice=0x%X duplicate=%d\n"),buffer.srcAdr, lastDeviceAdr, duplicatePkt);
+    bool duplicatePkt = (buffer.srcAdr == lastDeviceAdr && buffer.deviceType == lastDeviceType && buffer.seqno == lastDeviceSeqno);
+    DEBUG_PRINT(PSTR("[RFB] Data available device=0x%X lastDevice=0x%X seqno=%d devtype=%d duplicate=%d\n"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType, duplicatePkt);
 
     if (!duplicatePkt) {
         lastDeviceAdr = buffer.srcAdr;
         lastDeviceType = buffer.deviceType;
+        lastDeviceSeqno = buffer.seqno;
 
         switch (buffer.pktType)
         {

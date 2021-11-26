@@ -15,6 +15,7 @@ class RF24Bridge: public Item {
 
     uint8_t lastDeviceType = 0;
     uint32_t lastDeviceAdr = 0;
+    uint32_t lastDeviceSeqno = 0;
 
     bool isPairing = false; // is pairing mode active?
     unsigned long pairingTimer = 0; 
