@@ -5,6 +5,9 @@
 class Item {
     protected:
         const char* id;
+
+    public:
+        bool rebootNeeded = false;
     public:
         virtual void loop(){};
         Item(const char* id){this->id=id;};

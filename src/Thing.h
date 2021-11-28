@@ -3,21 +3,20 @@
 #include <Homie.h>
 #include "Item.h"
 #include "RF24Bridge.h"
+#include "List.h"
 
 class Thing {
     public:
-        HomieNode homieDevice = HomieNode("thing", "Thing", "thing");
+        HomieNode homie = HomieNode("thing", "Thing", "thing");
 
     protected:
         unsigned long seqStatusUpdatedOn = 0;
         unsigned long aliveTimer = 0;
 
         bool configured = false;
+        unsigned long rebootTimer = 0;
 
-        Item* item = nullptr;
-        Item* itemDHT = nullptr;
-
-        
+        List<Item> items;       
 
     public:
         Thing();

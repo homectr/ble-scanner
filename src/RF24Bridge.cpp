@@ -21,24 +21,24 @@ void RF24Bridge::processPktData(RFSensorPacket &buffer){
         d = createDevice(buffer.deviceType, buffer.srcAdr);
         if (d) { 
             devices.insert(d);
-            DEBUG_PRINT(PSTR("[RFB-Data] Device added to the list. len=%d\n"),devices.length());
+            _logger.logf_P(LOG_INFO,PSTR("[RFB-Data] Device added to the list. len=%d"),devices.length());
             devicesUpdated = true;
         }
-        else CONSOLE(PSTR("[RFB-Data] Warning: Unknown device type = %d\n"),buffer.deviceType);
+        else _logger.logf_P(LOG_NOTICE, PSTR("[RFB-Data] Warning: Unknown device type = %d\n"),buffer.deviceType);
     }
 
     if (d) {
-        DEBUG_PRINT(PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X\n"), d->type, d->id);
+        _logger.logf_P(LOG_DEBUG,PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X\n"), d->type, d->id);
         d->update(buffer.payload);
     } else {
-        CONSOLE(PSTR("Device not paired. adr=0x%X type=%d\n"),buffer.srcAdr, buffer.deviceType);
+        _logger.logf_P(LOG_NOTICE,PSTR("Device not paired. adr=0x%X type=%d"),buffer.srcAdr, buffer.deviceType);
     }
 
 }
 
 void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
 
-    DEBUG_PRINT(PSTR("Announce type=%d id=%X\n"),buffer.deviceType, buffer.srcAdr);
+    _logger.logf_P(LOG_NOTICE,PSTR("Device announced type=%d id=%X\n"),buffer.deviceType, buffer.srcAdr);
     if (!_announceTimer) _announceTimer = millis();
     if (_announced.length()>0) _announced += ", ";
 
@@ -68,17 +68,17 @@ void RF24Bridge::loop(){
     #ifndef NODEBUG_PRINT
     if (millis()-aliveTimer > RF24BR_ALIVE_TIMEOUT){
         aliveTimer = millis();
-        DEBUG_PRINT(PSTR("[RFB] alive ms=%lu\n"),millis());
+        _logger.logf_P(LOG_DEBUG,PSTR("Rf24 Alive ms=%lu"),millis());
     }
     #endif
 
     if (isPairing && millis()-pairingTimer > RF24BR_PAIRING_TIMEOUT) {
         isPairing = false;
-        CONSOLE(PSTR("[RFB] Pairing mode ended\n"));
+        _logger.logf_P(LOG_NOTICE,PSTR("Pairing mode ended"));
         if (devicesUpdated) {
-            CONSOLE(PSTR("[RFB] List of devices updated.\n"));
+            _logger.logf_P(LOG_NOTICE,PSTR("List of devices updated"));
             saveDevices();
-            esp_reset(); // reset to reload homie props
+            rebootNeeded = true;
         }
         homie.setProperty("pairing").setQos(1).send("false");
     }
@@ -95,7 +95,9 @@ void RF24Bridge::loop(){
     radio->read(&buffer,sizeof(buffer));
 
     bool duplicatePkt = (buffer.srcAdr == lastDeviceAdr && buffer.deviceType == lastDeviceType && buffer.seqno == lastDeviceSeqno);
-    DEBUG_PRINT(PSTR("[RFB] Data available device=0x%X lastDevice=0x%X seqno=%d devtype=%d duplicate=%d\n"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType, duplicatePkt);
+    
+    if (!duplicatePkt) _logger.logf_P(LOG_INFO,PSTR("[RFB] Data available device=0x%X devtype=%d"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType);
+    else _logger.logf_P(LOG_DEBUG,PSTR("[RFB] Duplicate packet device=0x%X lastDevice=0x%X seqno=%d devtype=%d"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType);
 
     if (!duplicatePkt) {
         lastDeviceAdr = buffer.srcAdr;
@@ -122,11 +124,9 @@ void RF24Bridge::loop(){
 RF24Bridge::RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin):Item(id){
     DEBUG_PRINT(PSTR("[RFB] Initializing bridge "));
     radio = new RF24(cePin, csnPin);
-    if (radio->begin()) {
-        DEBUG_PRINT(PSTR("success\n"));
-    } else {
-        DEBUG_PRINT(PSTR("failed\n"));
-    }
+    if (!radio->begin())
+        _logger.logf_P(LOG_EMERG,PSTR("Failed initializing RF24 radio."));
+    
     radio->setPALevel(RF24_PA_MAX);
     radio->setDataRate(RF24_250KBPS); // set datarate to 250kbps to enhance range
     radio->setAutoAck(false);
@@ -166,7 +166,7 @@ RFDevice* RF24Bridge::createDevice(RFSensorType type, uint32_t id){
 }
 
 void RF24Bridge::startPairing(){
-    CONSOLE(PSTR("[RFB] Pairing mode started\n"));
+    _logger.logf_P(LOG_NOTICE,PSTR("Pairing mode started"));
     radio->stopListening();
     // lower output power -> newly paired sensor has to be close to the bridge -> security
     radio->setPALevel(RF24_PA_MIN);
@@ -187,10 +187,10 @@ void RF24Bridge::startPairing(){
 }
 
 bool RF24Bridge::saveDevices(){
-    DEBUG_PRINT(PSTR("[RFB] Saving devices\n"));
+    _logger.logf_P(LOG_DEBUG,PSTR("Saving paired devices"));
     File f = SPIFFS.open(DEVICE_LIST_FILE_NAME,"w");
     if (!f) {
-        DEBUG_PRINT(PSTR("[RFB] Error saving devices\n"));
+        _logger.logf_P(LOG_ERR,PSTR("Error saving paired devices"));
         return false;
     }
     RFDevListIterator *i = devices.iterator();
@@ -206,7 +206,7 @@ bool RF24Bridge::saveDevices(){
     }
     f.close();
     delete i;
-    DEBUG_PRINT(PSTR("[RFB] Saved %d devices\n"),j);
+    _logger.logf_P(LOG_NOTICE,PSTR("Paired devices saved %d"),j);
     return true;
 }
 
@@ -214,7 +214,11 @@ bool RF24Bridge::loadDevices(){
     DEBUG_PRINT(PSTR("[RFB] Loading devices\n"));
     File f = SPIFFS.open(DEVICE_LIST_FILE_NAME,"r");
     if (!f) {
-        CONSOLE(PSTR("[RFB] Error opening list of devices\n"));
+        if (SPIFFS.exists(DEVICE_LIST_FILE_NAME)){
+            _logger.logf_P(LOG_ERR,PSTR("Failed loading paired devices"));
+        } else {
+            _logger.logf_P(LOG_NOTICE,PSTR("No device loaded - none paired so far."));
+        }
         return false;
     }
     int j = 0;
@@ -235,17 +239,17 @@ bool RF24Bridge::loadDevices(){
         }
     }
     f.close();
-    CONSOLE("[RFB] %d devices loaded\n",devices.length());
+    _logger.logf_P(LOG_INFO,PSTR("Loaded %d paired devices"),devices.length());
     return true;
 }
 
 
 bool RF24Bridge::cmdHandler(const String& value){
     if (value == "clear-all"){
-        CONSOLE(PSTR("CLEARING PAIRED DEVICES\n"));
+        _logger.logf_P(LOG_WARNING,PSTR("Clearing all paired devices and restarting."));
         devices.clear();
         saveDevices();
-        esp_reset(); // reset in order to reload homie props
+        rebootNeeded = true;
         return true;
     }
 
@@ -253,10 +257,10 @@ bool RF24Bridge::cmdHandler(const String& value){
         char i = value.indexOf(':');
         if (i<0) return false;
         uint32_t id = strtol(value.substring(i+1).c_str(),0,16);
-        CONSOLE(PSTR("CLEARING PAIRED DEVICE id=0x%X\n"),id);
+        _logger.logf_P(LOG_NOTICE,PSTR("Clearing paired device id=0x%X and restarting."),id);
         devices.clear(id);
         saveDevices();
-        esp_reset(); // reset in order to reload homie props
+        rebootNeeded = true;
         return true;
     }
 
@@ -267,20 +271,27 @@ bool RF24Bridge::cmdHandler(const String& value){
         if (j<=0) return false;
         String dt = value.substring(i+1,j);
         uint32_t id = strtol(value.substring(j+1).c_str(),0,16);
-        CONSOLE(PSTR("PAIRING DEVICE type=%s id=0x%X\n"),dt.c_str(), id);
-        RFDevice *d = nullptr;
-        if (dt == DEVICE_STR_SENSOR_HUMIDITY)
+        _logger.logf_P(LOG_DEBUG, PSTR("PAIRING DEVICE type=%s id=0x%X"),dt.c_str(), id);
+        
+        RFDevice *d = devices.get(id);
+        if (d) {
+            _logger.logf_P(LOG_NOTICE,PSTR("Pairing ignored - device already paired type=%s id=0x%X"),dt.c_str(),id);
+            return true;
+        }
+        if (dt == DEVICE_STR_SENSOR_HUMIDITY || dt == String(RFSensorType::HUMIDITY))
             d = createDevice(RFSensorType::HUMIDITY,id);
-        if (dt == DEVICE_STR_SENSOR_TEMP)
+        if (dt == DEVICE_STR_SENSOR_TEMP || dt == String(RFSensorType::TEMPERATURE))
             d = createDevice(RFSensorType::TEMPERATURE,id);
-        if (dt == DEVICE_STR_SENSOR_CONTACT)
+        if (dt == DEVICE_STR_SENSOR_CONTACT || dt == String(RFSensorType::CONTACT))
             d = createDevice(RFSensorType::CONTACT,id);
 
         if (d) {
             devices.insert(d);
             saveDevices();
-            CONSOLE(PSTR("DEVICE PAIRED type=%s id=0x%X\n"),dt.c_str(), id);
-            esp_reset(); // reset in order to reload homie props
+            _logger.logf_P(LOG_NOTICE,PSTR("Device paired type=%s id=0x%X and restarting."),dt.c_str(),id);
+            rebootNeeded = true;
+        } else {
+            _logger.logf_P(LOG_NOTICE,PSTR("Device not paired type=%s id=0x%X"),dt.c_str(),id);
         }
         return true;
     }
@@ -316,7 +327,7 @@ bool RF24Bridge::updateHandler(const String& property, const String& value){
 
 void RF24Bridge::identify(RFDevice* device){
     if (!device) return;
-    CONSOLE(PSTR("[RFB] Sending identification request to %s\n"),device->idStr);
+    _logger.logf_P(LOG_INFO,PSTR("[RFB] Sending identification request to %s\n"),device->idStr);
     radio->stopListening();
     // lower output power -> newly paired sensor has to be close to the bridge -> security
     radio->setPALevel(RF24_PA_MAX);

@@ -24,6 +24,8 @@ class RF24Bridge: public Item {
     String _announced = ""; // list of announced devices
     unsigned long _announceTimer = 0;
 
+    Logger& _logger = Logger::getInstance();
+
     protected:
         // save list of paired devices to configuration file
         bool saveDevices();

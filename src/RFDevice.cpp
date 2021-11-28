@@ -47,6 +47,7 @@ void RFSensorTemp:: update(RFSensorPayload& payload){
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(temp));
     CONSOLE(PSTR("%d Sensor-Temp id=0x%X temp=%.2f\n"),millis(),id,temp);
+    _logger.logf_P(LOG_NOTICE,PSTR("Sensor-Temp id=0x%X value=%.2f"),id,temp);
 }
 
 RFSensorContact::RFSensorContact(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::CONTACT, id, homie){
@@ -62,6 +63,7 @@ void RFSensorContact::update(RFSensorPayload& payload){
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(open?"false":"true");
     CONSOLE(PSTR("%d Sensor-Contact id=0x%X status=%d\n"),millis(),id,!open);
+    _logger.logf_P(LOG_NOTICE,PSTR("Sensor-Contact id=0x%X value=%d"),id,!open);
 }
 
 RFSensorHumidity::RFSensorHumidity(uint32_t id, HomieNode *homie):RFDevice(RFSensorType::HUMIDITY, id, homie){
@@ -76,4 +78,5 @@ void RFSensorHumidity:: update(RFSensorPayload& payload){
     // update Homie property
     if (Homie.isConnected()) homie->setProperty(idStr).send(String(hum));
     CONSOLE(PSTR("%d Sensor-Hum id=0x%X rh=%.2f\n"),millis(),id,hum);
+    _logger.logf_P(LOG_NOTICE,PSTR("Sensor-Humidity id=0x%X value=%.2f"),id,hum);
 }

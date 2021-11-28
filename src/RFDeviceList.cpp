@@ -23,6 +23,7 @@ void RFDeviceList::clear(){
         i = i->next;
         delete j;
     }
+    list = nullptr;
 }
 
 void RFDeviceList::clear(uint32_t id){
@@ -34,7 +35,7 @@ void RFDeviceList::clear(uint32_t id){
     }
 
     if (i) {
-        DEBUG_PRINT(PSTR("[DL-clrID] id=0x%X\n"),i->device->id);
+        DEBUG_PRINT(PSTR("[DL-clrID] id=0x%X\n"), i->device->id);
         
         if (j) j->next = i->next;
         else list = i->next;

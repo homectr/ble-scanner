@@ -5,6 +5,10 @@
 #include "RF24Bridge.h"
 #include <DHT_U.h>
 #include "ItemDHT.h"
+#include <Homie.h>
+#include "Logger.h"
+
+#define REBOOT_TIMEOUT  5000
 
 #define NODEBUG_PRINT
 #include "debug_print.h"
@@ -14,18 +18,23 @@
 
 #define DHT_PIN     5   //D1
 
+
+
 Thing::Thing(){
+    Item* item;
     // create properties for device
-    homieDevice.advertise("cmd").setDatatype("string").settable(globalCmdHandler);
+    homie.advertise("cmd").setDatatype("string").settable(globalCmdHandler);
 
     // create items
     item = new RF24Bridge("rf24brg", NRF_CEPIN, NRF_CSNPIN);
+    items.add(item);
 
     // create DHT sensor
     DHT_Unified *dht = new DHT_Unified(DHT_PIN, DHT22);
     dht->begin();
-    itemDHT = new ItemDHT("dht",dht);
-    
+    item = new ItemDHT("dht",dht);
+    items.add(item);
+
     DEBUG_PRINT(PSTR("[Thing:Thing] Thing created\n"));
 }
 
@@ -44,13 +53,29 @@ void Thing::setup(){
 
 bool Thing::updateHandler(const HomieNode& node, const String& property, const String& value){
     // call all update handlers for all items until one returns true
-    bool updated = item->updateHandler(property, value);
-    if (!updated) updated = itemDHT->updateHandler(property, value);
+    ListEntry<Item>* i = items.getList();
+    bool updated = false;
+    while (i && !updated) {
+        updated = i->entry->updateHandler(property, value);
+        i = i->next;
+    }
     return updated;
 }
 
 bool Thing::cmdHandler(const String& value){
-    bool updated = item->cmdHandler(value);
+    ListEntry<Item>* i = items.getList();
+    bool updated = false;
+
+    if (value == "reboot") {
+        Logger::getInstance().logf_P(LOG_NOTICE,PSTR("Reboot requested"),value.c_str());
+        rebootTimer = millis();
+        updated = true;
+    }
+
+    while (i && !updated) {
+        updated = i->entry->cmdHandler(value);
+        i = i->next;
+    }
     return updated;
 }
 
@@ -65,7 +90,16 @@ void Thing::loop(){
     #endif
 
     if (!isConfigured()) return;
-    item->loop();
-    itemDHT->loop();
+    ListEntry<Item>* i = items.getList();
+    while(i){
+        if (i->entry->rebootNeeded && rebootTimer == 0) rebootTimer = millis();
+        i->entry->loop();
+        i = i->next;
+    }
+
+    if (rebootTimer > 0 && millis()-rebootTimer > REBOOT_TIMEOUT) {
+        rebootTimer = 0;
+        Homie.reboot();
+    }
     
 }

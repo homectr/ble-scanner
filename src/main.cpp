@@ -2,8 +2,9 @@
 #include <Homie.h>
 #include "Thing.h"
 #include "handlers.h"
+#include "Logger.h"
 
-//#define NODEBUG_PRINT
+#define NODEBUG_PRINT
 #include "debug_print.h"
 
 #define HOMIE_LED_PIN       4 // D2
@@ -14,8 +15,6 @@
 
 Thing* thing = NULL;
 
-HomieNode homieDevice = HomieNode("device", "Device", "device");
-
 void setup() {
     Serial.begin(115200);
     Serial << endl << endl;
@@ -25,15 +24,38 @@ void setup() {
     Homie_setFirmware(FIRMWARE_NAME, FIRMWARE_VERSION);
     Homie.setGlobalInputHandler(globalUpdateHandler);
     Homie.setLedPin(HOMIE_LED_PIN, 1);
+    Homie.onEvent(globalOnHomieEvent);
 
+    // configure logger
+    HomieSetting<const char*> syslogHost("syslogHost","Syslog hostname or ip address");
+    HomieSetting<long> syslogPort("syslogPort","Syslog port");
+    HomieSetting<long> logLevel("logLevel","Log level");
+    syslogHost.setDefaultValue("");
+    syslogPort.setDefaultValue(514);
+    logLevel.setDefaultValue(LOG_DEBUG);
+
+    // create The Thing
     thing = new Thing();
 
     Homie.setup();
     thing->setup(); // call device setup only after Homie setup has been called
- 
+
+    // initialize logger
+    Logger& _logger = Logger::getInstance();
+    if (strlen(syslogHost.get()) > 0) // if syslog host is specified
+        _logger.enableSyslog(Homie.getConfiguration().deviceId, FIRMWARE_NAME, syslogHost.get(), syslogPort.get());
+    _logger.enableSerial(Serial);
+    _logger.setLogLevel(logLevel.get());
+
+    bool s = _logger.logf_P(LOG_NOTICE, PSTR("*** Device starting %s v%s"), FIRMWARE_NAME, FIRMWARE_VERSION);
+    if (!s) CONSOLE(PSTR("ERROR: Logging not configured properly. host=%s port=%lu\n"),syslogHost.get(), syslogPort.get());
+    else CONSOLE(PSTR("Logging up-to level=%d to %s:%lu\n"),logLevel.get(),syslogHost.get(), syslogPort.get());
+
 }
 
+#ifndef NODEBUG_PRINT
 unsigned long ms = millis();
+#endif
 
 void loop() {
     Homie.loop();

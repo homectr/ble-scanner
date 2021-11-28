@@ -2,6 +2,7 @@
 
 #include <Homie.h>
 #include "RFPacket.h"
+#include "Logger.h"
 
 #define DEVICE_STR_SENSOR_TEMP "temp"
 #define DEVICE_STR_SENSOR_CONTACT "cont"
@@ -15,6 +16,7 @@ class RFDevice {
         char* idStr = nullptr;
         uint32_t seqno;
         HomieNode *homie = nullptr;
+        Logger& _logger = Logger::getInstance();
 
     public:
         RFDevice(RFSensorType type, uint32_t id, HomieNode *homie);

@@ -36,7 +36,7 @@ void ItemDHT::read(){
 }
 
 void ItemDHT::loop(){
-    if (millis()-dhtTimer > 15000){
+    if (millis()-dhtTimer > 60000){
         dhtTimer = millis();
         read();
     }
