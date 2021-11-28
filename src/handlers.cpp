@@ -55,7 +55,7 @@ void globalOnHomieEvent(const HomieEvent& event) {
         break;
         case HomieEventType::OTA_STARTED:
         // Do whatever you want when OTA is started
-            logger.logf_P(LOG_ERR,PSTR("OTA started"));
+            logger.logf_P(LOG_NOTICE,PSTR("OTA started"));
         break;
         case HomieEventType::OTA_PROGRESS:
         // Do whatever you want when OTA is in progress
@@ -76,7 +76,7 @@ void globalOnHomieEvent(const HomieEvent& event) {
         break;
         case HomieEventType::WIFI_CONNECTED:
         // Do whatever you want when Wi-Fi is connected in normal mode
-            logger.logf_P(LOG_ERR,PSTR("Wifi connected %s"),event.ip.toString().c_str());
+            logger.logf_P(LOG_NOTICE,PSTR("Wifi connected %s"),event.ip.toString().c_str());
 
         // You can use event.ip, event.gateway, event.mask
         break;

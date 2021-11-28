@@ -1,6 +1,7 @@
 #include "ItemDHT.h"
+#include "Logger.h"
 
-//#define NODEBUG_PRINT
+#define NODEBUG_PRINT
 #include "debug_print.h"
 
 ItemDHT::ItemDHT(const char* id, DHT_Unified* dht):Item(id){
@@ -12,23 +13,25 @@ ItemDHT::ItemDHT(const char* id, DHT_Unified* dht):Item(id){
 void ItemDHT::read(){
     sensors_event_t event;
     String v = "NaN";
+    Logger& logger = Logger::getInstance();
 
     dht->temperature().getEvent(&event);
     if (isnan(event.temperature)) {
-        DEBUG_PRINT(PSTR("Error reading temperature!"));
+        logger.logf_P(LOG_ERR,PSTR("Error reading temperature"));
     }
     else {
-        DEBUG_PRINT(PSTR("  %s Temperature: %.1f °C\n"),getId(), event.temperature);
+        
+        logger.logf_P(LOG_INFO,PSTR("Temperature: %.1f °C"), event.temperature);
         v = String(event.temperature);
         homie.setProperty("temp").send(v);
     }  
 
     dht->humidity().getEvent(&event);
     if (isnan(event.relative_humidity)) {
-        DEBUG_PRINT(PSTR("Error reading humidity!"));
+        logger.logf_P(LOG_ERR,PSTR("Error reading humidity"));
     }
     else {
-        DEBUG_PRINT(PSTR("  %s Humidity: %.1f %%\n"),getId(), event.relative_humidity);
+        logger.logf_P(LOG_INFO,PSTR("Humidity: %.1f %%\n"), event.relative_humidity);
         v = String(event.relative_humidity);
         homie.setProperty("humd").send(v);
     }
@@ -40,5 +43,4 @@ void ItemDHT::loop(){
         dhtTimer = millis();
         read();
     }
-
 }

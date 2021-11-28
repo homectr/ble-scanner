@@ -53,7 +53,7 @@ void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
             _announced += DEVICE_STR_SENSOR_HUMIDITY;
             break;
         default:
-            DEBUG_PRINT(PSTR("Unknown device type\n"));
+            _logger.logf_P(LOG_WARN,PSTR("Unknown device type. type=%d id=%X"),buffer.deviceType, buffer.srcAdr);
             return;
     }
 
@@ -113,7 +113,7 @@ void RF24Bridge::loop(){
             processPktAnnounce(buffer);
             break;
         default:
-            DEBUG_PRINT(PSTR("[brg-loop] Unknown packet type=%d\n"),buffer.pktType);
+            _logger.logf_P(LOG_WARN,PSTR("Unknown packet type. type=%d"),buffer.pktType);
             break;
         }
         
