@@ -24,11 +24,11 @@ void RF24Bridge::processPktData(RFSensorPacket &buffer){
             _logger.logf_P(LOG_INFO,PSTR("[RFB-Data] Device added to the list. len=%d"),devices.length());
             devicesUpdated = true;
         }
-        else _logger.logf_P(LOG_NOTICE, PSTR("[RFB-Data] Warning: Unknown device type = %d\n"),buffer.deviceType);
+        else _logger.logf_P(LOG_NOTICE, PSTR("[RFB-Data] Warning: Unknown device type = %d"),buffer.deviceType);
     }
 
     if (d) {
-        _logger.logf_P(LOG_DEBUG,PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X\n"), d->type, d->id);
+        _logger.logf_P(LOG_DEBUG,PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X"), d->type, d->id);
         d->update(buffer.payload);
     } else {
         _logger.logf_P(LOG_NOTICE,PSTR("Device not paired. adr=0x%X type=%d"),buffer.srcAdr, buffer.deviceType);
@@ -38,7 +38,7 @@ void RF24Bridge::processPktData(RFSensorPacket &buffer){
 
 void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
 
-    _logger.logf_P(LOG_NOTICE,PSTR("Device announced type=%d id=%X\n"),buffer.deviceType, buffer.srcAdr);
+    _logger.logf_P(LOG_NOTICE,PSTR("Device announced type=%d id=%X"),buffer.deviceType, buffer.srcAdr);
     if (!_announceTimer) _announceTimer = millis();
     if (_announced.length()>0) _announced += ", ";
 
