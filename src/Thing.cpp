@@ -18,8 +18,6 @@
 
 #define DHT_PIN     5   //D1
 
-
-
 Thing::Thing(){
     Item* item;
     // create properties for device
@@ -90,6 +88,8 @@ void Thing::loop(){
     #endif
 
     if (!isConfigured()) return;
+
+    // check if any item requested reboot
     ListEntry<Item>* i = items.getList();
     while(i){
         if (i->entry->rebootNeeded && rebootTimer == 0) rebootTimer = millis();
@@ -97,6 +97,7 @@ void Thing::loop(){
         i = i->next;
     }
 
+    // can't use delay in Homie callback, so we need to handle delay before reboot here
     if (rebootTimer > 0 && millis()-rebootTimer > REBOOT_TIMEOUT) {
         rebootTimer = 0;
         Homie.reboot();

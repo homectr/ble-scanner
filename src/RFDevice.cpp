@@ -1,6 +1,6 @@
 #include "RFDevice.h"
 
-//#define NODEBUG_PRINT
+#define NODEBUG_PRINT
 #include "debug_print.h"
 
 RFDevice::RFDevice(RFSensorType type, uint32_t id, HomieNode *homie){

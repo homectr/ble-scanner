@@ -35,10 +35,13 @@ void setup() {
     logLevel.setDefaultValue(LOG_DEBUG);
 
     // create The Thing
+    // has to be created before Homie.setup() call
     thing = new Thing();
 
     Homie.setup();
-    thing->setup(); // call device setup only after Homie setup has been called
+
+    // call device setup only after Homie setup has been called
+    thing->setup(); 
 
     // initialize logger
     Logger& _logger = Logger::getInstance();
@@ -47,7 +50,9 @@ void setup() {
     _logger.enableSerial(Serial);
     _logger.setLogLevel(logLevel.get());
 
+    // this most likely won't be logged as wifi is not connected yet
     bool s = _logger.logf_P(LOG_NOTICE, PSTR("*** Device starting %s v%s"), FIRMWARE_NAME, FIRMWARE_VERSION);
+
     if (!s) CONSOLE(PSTR("ERROR: Logging not configured properly. host=%s port=%lu\n"),syslogHost.get(), syslogPort.get());
     else CONSOLE(PSTR("Logging up-to level=%d to %s:%lu\n"),logLevel.get(),syslogHost.get(), syslogPort.get());
 

@@ -2,7 +2,7 @@
 #include <FS.h>
 #include "utils.h"
 
-//#define NODEBUG_PRINT
+#define NODEBUG_PRINT
 #include "debug_print.h"
 
 #define RF24BR_CHANNEL              120
@@ -31,7 +31,7 @@ void RF24Bridge::processPktData(RFSensorPacket &buffer){
         _logger.logf_P(LOG_DEBUG,PSTR("[RFB-Data] Updating dtype=%d adr=0x%08X"), d->type, d->id);
         d->update(buffer.payload);
     } else {
-        _logger.logf_P(LOG_NOTICE,PSTR("Device not paired. adr=0x%X type=%d"),buffer.srcAdr, buffer.deviceType);
+        _logger.logf_P(LOG_DEBUG,PSTR("Device not paired. adr=0x%X type=%d"),buffer.srcAdr, buffer.deviceType);
     }
 
 }
@@ -53,7 +53,7 @@ void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
             _announced += DEVICE_STR_SENSOR_HUMIDITY;
             break;
         default:
-            _logger.logf_P(LOG_WARN,PSTR("Unknown device type. type=%d id=%X"),buffer.deviceType, buffer.srcAdr);
+            _logger.logf_P(LOG_WARNING,PSTR("Unknown device type. type=%d id=%X"),buffer.deviceType, buffer.srcAdr);
             return;
     }
 
@@ -68,7 +68,7 @@ void RF24Bridge::loop(){
     #ifndef NODEBUG_PRINT
     if (millis()-aliveTimer > RF24BR_ALIVE_TIMEOUT){
         aliveTimer = millis();
-        _logger.logf_P(LOG_DEBUG,PSTR("Rf24 Alive ms=%lu"),millis());
+        DEBUG_PRINT(PSTR("Rf24 Alive ms=%lu"),millis());
     }
     #endif
 
@@ -113,7 +113,7 @@ void RF24Bridge::loop(){
             processPktAnnounce(buffer);
             break;
         default:
-            _logger.logf_P(LOG_WARN,PSTR("Unknown packet type. type=%d"),buffer.pktType);
+            _logger.logf_P(LOG_WARNING,PSTR("Unknown packet type. type=%d"),buffer.pktType);
             break;
         }
         
@@ -291,7 +291,7 @@ bool RF24Bridge::cmdHandler(const String& value){
             _logger.logf_P(LOG_NOTICE,PSTR("Device paired type=%s id=0x%X and restarting."),dt.c_str(),id);
             rebootNeeded = true;
         } else {
-            _logger.logf_P(LOG_NOTICE,PSTR("Device not paired type=%s id=0x%X"),dt.c_str(),id);
+            _logger.logf_P(LOG_WARNING,PSTR("Pairing failed for device type=%s id=0x%X"),dt.c_str(),id);
         }
         return true;
     }
@@ -304,7 +304,7 @@ bool RF24Bridge::updateHandler(const String& property, const String& value){
     
     if (property == "pairing"){
         if (value == "true") {
-            DEBUG_PRINT(PSTR("[RFB-uh] Request for pairing process\n"));
+            _logger.logf_P(LOG_NOTICE,PSTR("[RFB-uh] Request for pairing process"));
             if (!isPairing) startPairing();
         }
         return true;
@@ -313,11 +313,11 @@ bool RF24Bridge::updateHandler(const String& property, const String& value){
     int i = property.indexOf("identify");
     if (i > 0) {
         String s = property.substring(0,i).c_str();
-        DEBUG_PRINT(PSTR("[RFB-uh] Request for identification for %s\n"),s.c_str());
+        _logger.logf_P(LOG_NOTICE,PSTR("[RFB-uh] Request for identification for %s"),s.c_str());
         RFDevice* d = devices.get(s.c_str());
         if (d) identify(d);
         else {
-            DEBUG_PRINT(PSTR("[RFB-uh] Device not registered %s.\n"),s.c_str());
+            _logger.logf_P(LOG_WARNING,PSTR("[RFB-uh] Identification not possible. Device not paired %s"),s.c_str());
         }
         return true;
     }
