@@ -21,8 +21,9 @@ On top of standard configuration this project requires few addition settings in 
 * 7 - debug-level messages
 
 ### Uploading configuration
-Set device to configuration mode (hold SET button while powering up device). Without any configuration device starts in configuration mode automatically.
-Follow instructions from https://homieiot.github.io/homie-esp8266/docs/3.0.1/configuration/http-json-api/
+1. Set device to configuration mode (hold SET button while powering up device).\
+   Without any configuration device starts in configuration mode automatically.
+1. Follow instructions from https://homieiot.github.io/homie-esp8266/docs/3.0.1/configuration/http-json-api/
 
 ### Example Homie config
 See https://homieiot.github.io/homie-esp8266/docs/3.0.1/configuration/json-configuration-file/ for full documentation about Homie configuration
