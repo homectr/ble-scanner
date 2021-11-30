@@ -15,6 +15,31 @@
 
 #define CHAR_LINEFEED char(10)
 
+
+RF24Bridge::RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin):Item(id){
+    DEBUG_PRINT(PSTR("[RFB] Initializing bridge "));
+    radio = new RF24(cePin, csnPin);
+    if (!radio->begin())
+        _logger.logf_P(LOG_EMERG,PSTR("Failed initializing RF24 radio."));
+    
+    radio->setPALevel(RF24_PA_MAX);
+    radio->setDataRate(RF24_250KBPS); // set datarate to 250kbps to enhance range
+    radio->setAutoAck(false);
+    radio->setChannel(RF24BR_CHANNEL); 
+    radio->setCRCLength(RF24_CRC_16); // set CRC length
+    radio->openReadingPipe(1, RF24BR_BRIDGE_ADDRESS);
+    radio->startListening();
+
+    #ifndef NODEBUG_PRINT
+    radio->printPrettyDetails();
+    #endif
+
+    homie.advertise("pairing").setDatatype("boolean").settable().setRetained(true);
+    homie.advertise("newdevices").setDatatype("string").setRetained(true);
+
+    loadDevices();
+}
+
 void RF24Bridge::processPktData(RFSensorPacket &buffer){
     RFDevice* d = devices.get(buffer.srcAdr); // find device in the list of paired devices
     if (!d && isPairing) { // device not found, but pairing is active
@@ -61,88 +86,6 @@ void RF24Bridge::processPktAnnounce(RFSensorPacket &buffer){
     snprintf(adr,10,":%08X",buffer.srcAdr);
     _announced += adr;
 
-}
-
-void RF24Bridge::loop(){
-    radio->startListening();
-    #ifndef NODEBUG_PRINT
-    if (millis()-aliveTimer > RF24BR_ALIVE_TIMEOUT){
-        aliveTimer = millis();
-        DEBUG_PRINT(PSTR("Rf24 Alive ms=%lu"),millis());
-    }
-    #endif
-
-    if (isPairing && millis()-pairingTimer > RF24BR_PAIRING_TIMEOUT) {
-        isPairing = false;
-        _logger.logf_P(LOG_NOTICE,PSTR("Pairing mode ended"));
-        if (devicesUpdated) {
-            _logger.logf_P(LOG_NOTICE,PSTR("List of devices updated"));
-            saveDevices();
-            rebootNeeded = true;
-        }
-        homie.setProperty("pairing").setQos(1).send("false");
-    }
-
-    if (_announced.length()>0 && millis()-_announceTimer > 5000){
-        homie.setProperty("newdevices").setQos(1).send(_announced);
-        _announced = "";
-        _announceTimer = 0;
-    }
-
-    if (!radio->available()) return;
-
-    RFSensorPacket buffer;
-    radio->read(&buffer,sizeof(buffer));
-
-    bool duplicatePkt = (buffer.srcAdr == lastDeviceAdr && buffer.deviceType == lastDeviceType && buffer.seqno == lastDeviceSeqno);
-    
-    if (!duplicatePkt) _logger.logf_P(LOG_INFO,PSTR("[RFB] Data available device=0x%X devtype=%d"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType);
-    else _logger.logf_P(LOG_DEBUG,PSTR("[RFB] Duplicate packet device=0x%X lastDevice=0x%X seqno=%d devtype=%d"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType);
-
-    if (!duplicatePkt) {
-        lastDeviceAdr = buffer.srcAdr;
-        lastDeviceType = buffer.deviceType;
-        lastDeviceSeqno = buffer.seqno;
-
-        switch (buffer.pktType)
-        {
-        case RFPacketType::DATA :
-            processPktData(buffer);
-            break;
-        case RFPacketType::ANNOUNCE :
-            processPktAnnounce(buffer);
-            break;
-        default:
-            _logger.logf_P(LOG_WARNING,PSTR("Unknown packet type. type=%d"),buffer.pktType);
-            break;
-        }
-        
-    }
-        
-}
-
-RF24Bridge::RF24Bridge(const char* id, uint16_t cePin, uint16_t csnPin):Item(id){
-    DEBUG_PRINT(PSTR("[RFB] Initializing bridge "));
-    radio = new RF24(cePin, csnPin);
-    if (!radio->begin())
-        _logger.logf_P(LOG_EMERG,PSTR("Failed initializing RF24 radio."));
-    
-    radio->setPALevel(RF24_PA_MAX);
-    radio->setDataRate(RF24_250KBPS); // set datarate to 250kbps to enhance range
-    radio->setAutoAck(false);
-    radio->setChannel(RF24BR_CHANNEL); 
-    radio->setCRCLength(RF24_CRC_16); // set CRC length
-    radio->openReadingPipe(1, RF24BR_BRIDGE_ADDRESS);
-    radio->startListening();
-
-    #ifndef NODEBUG_PRINT
-    radio->printPrettyDetails();
-    #endif
-
-    homie.advertise("pairing").setDatatype("boolean").settable().setRetained(true);
-    homie.advertise("newdevices").setDatatype("string").setRetained(true);
-
-    loadDevices();
 }
 
 RFDevice* RF24Bridge::createDevice(RFSensorType type, uint32_t id){
@@ -342,4 +285,62 @@ void RF24Bridge::identify(RFDevice* device){
         radio->writeFast(&p, sizeof(p));
         delay(20);
     }
+}
+
+void RF24Bridge::loop(){
+    radio->startListening();
+    #ifndef NODEBUG_PRINT
+    if (millis()-aliveTimer > RF24BR_ALIVE_TIMEOUT){
+        aliveTimer = millis();
+        DEBUG_PRINT(PSTR("Rf24 Alive ms=%lu"),millis());
+    }
+    #endif
+
+    if (isPairing && millis()-pairingTimer > RF24BR_PAIRING_TIMEOUT) {
+        isPairing = false;
+        _logger.logf_P(LOG_NOTICE,PSTR("Pairing mode ended"));
+        if (devicesUpdated) {
+            _logger.logf_P(LOG_NOTICE,PSTR("List of devices updated"));
+            saveDevices();
+            rebootNeeded = true;
+        }
+        homie.setProperty("pairing").setQos(1).send("false");
+    }
+
+    if (_announced.length()>0 && millis()-_announceTimer > 5000){
+        homie.setProperty("newdevices").setQos(1).send(_announced);
+        _announced = "";
+        _announceTimer = 0;
+    }
+
+    if (!radio->available()) return;
+
+    RFSensorPacket buffer;
+    radio->read(&buffer,sizeof(buffer));
+
+    bool duplicatePkt = (buffer.srcAdr == lastDeviceAdr && buffer.deviceType == lastDeviceType && buffer.seqno == lastDeviceSeqno);
+    
+    if (!duplicatePkt) _logger.logf_P(LOG_INFO,PSTR("[RFB] Data available device=0x%X devtype=%d"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType);
+    else _logger.logf_P(LOG_DEBUG,PSTR("[RFB] Duplicate packet device=0x%X lastDevice=0x%X seqno=%d devtype=%d"),buffer.srcAdr, lastDeviceAdr, buffer.seqno, buffer.deviceType);
+
+    if (!duplicatePkt) {
+        lastDeviceAdr = buffer.srcAdr;
+        lastDeviceType = buffer.deviceType;
+        lastDeviceSeqno = buffer.seqno;
+
+        switch (buffer.pktType)
+        {
+        case RFPacketType::DATA :
+            processPktData(buffer);
+            break;
+        case RFPacketType::ANNOUNCE :
+            processPktAnnounce(buffer);
+            break;
+        default:
+            _logger.logf_P(LOG_WARNING,PSTR("Unknown packet type. type=%d"),buffer.pktType);
+            break;
+        }
+        
+    }
+        
 }
