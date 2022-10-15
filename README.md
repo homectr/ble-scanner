@@ -51,3 +51,18 @@ See https://homieiot.github.io/homie-esp8266/docs/3.0.1/configuration/json-confi
     }
   }
 ```
+
+## Using
+
+1. Start rf24 bridge (thi device)
+1. Start rf24 sensor node device (or devices) - see project https://github.com/homectr/nrf24-sensor-node.
+1. Pair sensor nodes with the bridge. Bridge will automatically create Homie nodes in it configuration for paired devices.
+
+## Pairing
+
+1. Start pairing mode on bridge device. This can be done by setting `homie/{device_id}/rf24/pairing` property to `ON`.     
+    ```publish "ON" to homie/{device_id}/rf24/pairing/set```
+1. Push `ANNOUNCE` button on sensor node. Sensor node will broadcase its devices.
+1. Bridge property `homie/{device_id}/rf24/newdevices` will contain comma delimited list of announced devices which are not paired yet.
+1. Pair sensor device with bridge by publishing `pair:{sensor_type}:{sensor_id}` to bridge property `homie/{device_id}/thing/cmd/set`.
+
