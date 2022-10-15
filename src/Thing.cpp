@@ -20,10 +20,12 @@
 
 Thing::Thing()
 {
-    Item *item;
+
     // create properties for device
+    // use homie/{device_id}/thing/cmd/set to send commands to the thing
     homie.advertise("cmd").setDatatype("string").settable(globalCmdHandler);
 
+    Item *item;
     // create items
     item = new RF24Bridge("rf24brg", NRF_CEPIN, NRF_CSNPIN);
     items.add(item);

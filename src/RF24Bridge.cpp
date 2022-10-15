@@ -237,13 +237,14 @@ bool RF24Bridge::cmdHandler(const String &value)
 
     if (value.startsWith("pair:"))
     {
+        // expected format = pair:device_type:device_id
         char i = value.indexOf(':');
         if (i < 0)
             return false;
         char j = value.indexOf(':', i + 1);
         if (j <= 0)
             return false;
-        String dt = value.substring(i + 1, j);
+        String dt = value.substring(i + 1, j); // extract device type
         uint32_t id = strtol(value.substring(j + 1).c_str(), 0, 16);
         _logger.logf_P(LOG_DEBUG, PSTR("PAIRING DEVICE type=%s id=0x%X"), dt.c_str(), id);
 
