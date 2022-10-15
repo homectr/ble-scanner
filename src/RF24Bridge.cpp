@@ -2,7 +2,7 @@
 #include <FS.h>
 #include "utils.h"
 
-//#define NODEBUG_PRINT
+#define NODEBUG_PRINT
 #include "debug_print.h"
 
 #define RF24BR_CHANNEL 120
