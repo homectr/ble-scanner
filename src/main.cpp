@@ -67,7 +67,7 @@ unsigned long ms = millis();
 
 void loop()
 {
-    // Homie.loop();
+    Homie.loop();
     thing->loop();
 #ifndef NODEBUG_PRINT
     if (millis() - ms > ALIVE_TIMER)

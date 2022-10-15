@@ -20,8 +20,8 @@
 
 Thing::Thing()
 {
-
     // create properties for device
+
     // use homie/{device_id}/thing/cmd/set to send commands to the thing
     homie.advertise("cmd").setDatatype("string").settable(globalCmdHandler);
 
