@@ -73,6 +73,9 @@ void globalOnHomieEvent(const HomieEvent &event)
 
         // You can use event.ip, event.gateway, event.mask
         break;
+    case HomieEventType::MQTT_READY:
+        logger.logf_P(LOG_NOTICE, PSTR("MQTT connected"));
+        break;
     case HomieEventType::MQTT_DISCONNECTED:
         // Do whatever you want when MQTT is disconnected in normal mode
 
