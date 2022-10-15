@@ -2,32 +2,34 @@
 
 #include "RFDevice.h"
 
-struct RFDeviceListEntry {
+struct RFDeviceListEntry
+{
     RFDevice *device;
     RFDeviceListEntry *next;
 };
 
-class RFDevListIterator {
+class RFDevListIterator
+{
     RFDeviceListEntry *first = nullptr;
     RFDeviceListEntry *current = nullptr;
-    public:
-        RFDevListIterator(RFDeviceListEntry *entry);
-        RFDevice* next();
-        bool end(){return current == nullptr;};
+
+public:
+    RFDevListIterator(RFDeviceListEntry *entry);
+    RFDevice *next();
+    bool end() { return current == nullptr; };
 };
 
-class RFDeviceList {
+class RFDeviceList
+{
     RFDeviceListEntry *list = nullptr;
     uint16_t _length = 0;
 
-    public:
-        void insert(RFDevice* device);
-        void clear();
-        void clear(uint32_t id);
-        RFDevice* get(uint32_t id);
-        RFDevice* get(const char* idstr);
-        uint16_t length(){return _length;};
-        RFDevListIterator *iterator();
-
+public:
+    void insert(RFDevice *device);
+    void clear();
+    void clear(uint32_t id);
+    RFDevice *get(uint32_t id);
+    RFDevice *get(const char *idstr);
+    uint16_t length() { return _length; };
+    RFDevListIterator *iterator();
 };
-
